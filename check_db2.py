@@ -1,0 +1,10 @@
+﻿import psycopg2
+conn = psycopg2.connect(dbname='socialmind', user='postgres', host='localhost')
+cur = conn.cursor()
+cur.execute('SELECT COUNT(*) FROM users')
+print('Users via psycopg2:', cur.fetchone()[0])
+cur.execute('SELECT COUNT(*) FROM user_activity_logs')
+print('Activity logs via psycopg2:', cur.fetchone()[0])
+cur.execute('SELECT email, username FROM users LIMIT 5')
+print('Sample users:', cur.fetchall())
+conn.close()
