@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import os; from dotenv import load_dotenv; from pathlib import Path; BASE_DIR=Path\\('config/settings.py'\\).resolve\\(\\).parent.parent; load_dotenv\\(BASE_DIR/'.env'\\); print\\('DB_HOST:', os.environ.get\\('DB_HOST'\\)\\); print\\('DB_NAME:', os.environ.get\\('DB_NAME'\\)\\)\")",
+      "Bash(powershell.exe -Command \"Get-Service postgresql-x64-15 | Select-Object Name,Status,StartType\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\odd info 3\\\\Desktop\\\\AI\\\\now\\\\socialmind-platform-with-audio\\\\socialmind-platform-with-audio\\\\socialmind\" -Recurse -Depth 2)",
+      "Bash(Select-Object FullName)",
+      "PowerShell([System.Environment]::GetEnvironmentVariable\\(\"Path\", \"User\"\\) -split \";\")",
+      "PowerShell(cmd /c \"where node\" 2>&1)",
+      "PowerShell(cmd /c \"where npm\" 2>&1)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\ODD INFO DESIGN\\Downloads\\socialmind-platform-with-audio-updated\\socialmind-platform-with-audio\\socialmind\\backend\\config"
+    ]
+  }
+}

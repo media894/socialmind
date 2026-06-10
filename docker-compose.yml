@@ -1,0 +1,125 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: socialmind
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+      python manage.py collectstatic --noinput &&
+      gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --worker-class gevent --timeout 120"
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DEBUG=False
+      - DB_HOST=db
+      - DB_NAME=socialmind
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=QQrg9aR0tX2Z4BKyp8dWyqbCgzCHJO7riBxYWYEK_1I=
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:80
+      - AWS_ACCESS_KEY_ID=
+      - AWS_SECRET_ACCESS_KEY=
+      - AWS_STORAGE_BUCKET_NAME=socialmind-media
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL}
+      - GOOGLE_CLIENT_ID=622806271516-586b8sjvsqjnpoar87bitmrg2ig7a50a.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
+    volumes:
+      - media_files:/app/media
+    ports:
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    command: celery -A config worker --loglevel=info --concurrency=2
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DEBUG=False
+      - DB_HOST=db
+      - DB_NAME=socialmind
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=QQrg9aR0tX2Z4BKyp8dWyqbCgzCHJO7riBxYWYEK_1I=
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL}
+      
+    volumes:
+      - media_files:/app/media
+    depends_on:
+      - backend
+      - redis
+
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    command: celery -A config beat --loglevel=info
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DEBUG=False
+      - DB_HOST=db
+      - DB_NAME=socialmind
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=QQrg9aR0tX2Z4BKyp8dWyqbCgzCHJO7riBxYWYEK_1I=
+      - PUBLIC_APP_URL=${PUBLIC_APP_URL}
+      
+    depends_on:
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  media_files:
