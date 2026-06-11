@@ -543,10 +543,6 @@ class CheckEmailView(APIView):
         email = str(request.data.get('email', '')).strip().lower()
         if not email or '@' not in email:
             return Response({'exists': False, 'valid': False, 'deliverable': False, 'reason': 'Enter a valid email address.'})
-        # Full SMTP check (MX + RCPT TO probe where the server supports it)
-        deliverable, reason = _smtp_validate_email(email)
-        if not deliverable:
-            return Response({'exists': False, 'valid': True, 'deliverable': False, 'reason': reason})
         exists = User.objects.filter(email__iexact=email).exists()
         return Response({'exists': exists, 'valid': True, 'deliverable': True, 'reason': ''})
 
@@ -694,39 +690,6 @@ class RegisterView(generics.CreateAPIView):
 
         log_activity(user, 'register', detail=f'New account registered ({user.email})')
         return Response(_issue_tokens_for_user(user), status=status.HTTP_201_CREATED)
-        # Rate-limit OTP sends per email to prevent abuse
-        otp_rate_key = f'sm:reg-otp:{email}'
-        otp_attempts = cache.get(otp_rate_key, 0)
-        if otp_attempts >= 5:
-            return Response(
-                {'email': ['Too many registration attempts for this email. Please wait 10 minutes and try again.']},
-                status=status.HTTP_429_TOO_MANY_REQUESTS,
-            )
-
-        # Clean up stale unverified registrations so the user can retry freely
-        username = str(request.data.get('username', '')).strip()
-        if email:
-            User.objects.filter(email__iexact=email, is_active=False, email_verified=False).delete()
-        if username:
-            User.objects.filter(username__iexact=username, is_active=False, email_verified=False).delete()
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        user.is_active = False
-        user.email_verified = False
-        user.phone_verified = False
-        user.save(update_fields=['is_active', 'email_verified', 'phone_verified'])
-
-        otp_channel = serializer.validated_data.get('otp_channel', 'email')
-        if otp_channel != 'email':
-            return Response({'detail': 'Email OTP is the only supported verification method.'}, status=status.HTTP_400_BAD_REQUEST)
-        challenge = _send_otp(user, purpose='register', channel=otp_channel)
-        cache.set(otp_rate_key, otp_attempts + 1, timeout=600)
-        return Response({
-            'message': f'Verification code sent to {_mask_contact(challenge.channel, challenge.contact_value)}.',
-            **_otp_response_payload(challenge),
-        }, status=status.HTTP_201_CREATED)
 
 
 class RegisterVerifyOTPView(APIView):
