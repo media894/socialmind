@@ -666,17 +666,34 @@ class RegisterView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         email = str(request.data.get('email', '')).strip().lower()
 
-        # Full SMTP deliverability check (MX record + RCPT TO probe where supported)
-        if email and '@' in email:
-            deliverable, reason = _smtp_validate_email(email)
-            if not deliverable:
-                return Response(
-                    {'email': [reason or 'This email address does not appear to be deliverable. Please use a real email.']},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        elif not email:
+        if not email:
             return Response({'email': ['Email is required.']}, status=status.HTTP_400_BAD_REQUEST)
 
+        # If email already exists and is active, tell user to login
+        existing = User.objects.filter(email__iexact=email, is_active=True).first()
+        if existing:
+            return Response(
+                {'email': ['An account with this email already exists. Please log in.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Clean up stale unverified registrations
+        username = str(request.data.get('username', '')).strip()
+        User.objects.filter(email__iexact=email, is_active=False).delete()
+        if username:
+            User.objects.filter(username__iexact=username, is_active=False).delete()
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        # Activate immediately — no OTP needed
+        user.is_active = True
+        user.email_verified = True
+        user.save(update_fields=['is_active', 'email_verified'])
+
+        log_activity(user, 'register', detail=f'New account registered ({user.email})')
+        return Response(_issue_tokens_for_user(user), status=status.HTTP_201_CREATED)
         # Rate-limit OTP sends per email to prevent abuse
         otp_rate_key = f'sm:reg-otp:{email}'
         otp_attempts = cache.get(otp_rate_key, 0)
