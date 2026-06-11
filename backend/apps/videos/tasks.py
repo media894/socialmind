@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 from celery import shared_task
 from django.utils import timezone
 from apps.videos.video_uploader import get_platform_render_preset, render_platform_video
+from apps.social.publishers import PublishAPIError
 
 logger = logging.getLogger(__name__)
 
