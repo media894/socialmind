@@ -572,6 +572,8 @@ def _resolve_platform_video_source(project, platform: str, platform_subtype: str
 
 def _resolve_project_video_source(project) -> dict:
     from django.conf import settings
+    import tempfile
+    import httpx
 
     public_url = (project.video_url or '').strip()
     local_path = ''
@@ -581,6 +583,20 @@ def _resolve_project_video_source(project) -> dict:
             local_path = project.video_file.path
         except Exception:
             local_path = ''
+
+    # If local file missing but we have a public URL (Cloudinary/S3), download it
+    if (not local_path or not os.path.exists(local_path)) and public_url and public_url.startswith('http'):
+        try:
+            logger.info('Local file missing, downloading from %s', public_url)
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4', dir='/tmp')
+            with httpx.Client(timeout=60, follow_redirects=True) as client:
+                r = client.get(public_url)
+                r.raise_for_status()
+                tmp.write(r.content)
+            local_path = tmp.name
+            logger.info('Downloaded video to %s', local_path)
+        except Exception as e:
+            logger.warning('Failed to download video from URL: %s', e)
         if not public_url:
             relative_url = project.video_file.url
             public_base = getattr(settings, 'PUBLIC_APP_URL', '').rstrip('/')
