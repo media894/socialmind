@@ -710,7 +710,7 @@ def facebook_login_start(request):
             status=503,
         )
 
-    redirect_uri = _google_oauth_redirect_uri(request, '/api/v1/auth/oauth/facebook-login/callback/')
+    redirect_uri = 'https://socialmind-cuoi.onrender.com/api/v1/auth/oauth/facebook-login/callback/'
     url = (
         'https://www.facebook.com/v18.0/dialog/oauth'
         f'?client_id={app_id}'
