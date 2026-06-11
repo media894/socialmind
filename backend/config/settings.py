@@ -101,8 +101,8 @@ SIMPLE_JWT = {
 }
 
 # Celery
-CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
+CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://red-d8l98j7avr4c73f4rqjg:6379')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://red-d8l98j7avr4c73f4rqjg:6379')
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
