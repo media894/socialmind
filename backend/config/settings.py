@@ -11,7 +11,10 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-production')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') + ['evacuee-chaperone-stuffed.ngrok-free.dev']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') + [
+    'evacuee-chaperone-stuffed.ngrok-free.dev',
+    '.onrender.com',  # allows all render subdomains
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
