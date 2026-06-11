@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
 from . import oauth_views
 from .webhook_views import paypal_webhook
+from apps.users.views import CleanupStuckAccountView 
 
 router = DefaultRouter()
 router.register('api-keys', views.APIKeyViewSet, basename='api-keys')
@@ -47,5 +48,4 @@ urlpatterns = [
     path('oauth/facebook-login/callback/', oauth_views.facebook_login_callback, name='facebook-login-callback'),
     path('', include(router.urls)),
 ]
-
 

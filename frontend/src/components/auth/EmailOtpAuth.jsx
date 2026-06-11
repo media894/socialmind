@@ -380,20 +380,25 @@ export default function EmailOtpAuth({
     if (!termsAccepted) { setError('Please accept the Terms and Privacy Policy to create an account.'); return }
     setLoading(true)
     try {
-      const { data } = await authApi.startEmailOtp({ email: signupEmail.trim().toLowerCase(), flow: 'register' })
-      setChallenge(data)
-      setStage('signup_otp')
-      setOtp('')
-      toast.success(data.message || 'Verification code sent to your email.')
-    } catch (err) {
-      const detail = err.response?.data?.detail || err.response?.data?.error || ''
-      if (detail.toLowerCase().includes('already') || detail.toLowerCase().includes('exist')) {
-        setError('Email already registered. Sign in instead.')
-      } else {
-        setError(detail || 'Could not create account. Please try again.')
-      }
-    } finally { setLoading(false) }
+  const { data } = await authApi.register({
+    username: signupUsername.trim(),
+    email: signupEmail.trim().toLowerCase(),
+    password: signupPwd,
+    password_confirm: signupPwdConfirm,
+  })
+  completeAuth(data)
+  if (onComplete) onComplete(data)
+  toast.success('Account created! Welcome to SocialMind.')
+  close()
+} catch (err) {
+  const detail = err.response?.data?.detail || err.response?.data?.email?.[0] || err.response?.data?.error || ''
+  if (detail.toLowerCase().includes('already') || detail.toLowerCase().includes('exist')) {
+    setError('Email already registered. Sign in instead.')
+  } else {
+    setError(detail || 'Could not create account. Please try again.')
   }
+}
+}
 
   const handleVerifySignupOtp = async (e) => {
     e.preventDefault()
