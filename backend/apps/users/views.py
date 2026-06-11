@@ -654,6 +654,14 @@ class CheckUsernameView(APIView):
         taken = User.objects.filter(username__iexact=username).exists()
         return Response({'taken': taken})
 
+class CleanupStuckAccountView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        email = str(request.data.get('email', '')).strip().lower()
+        deleted, _ = User.objects.filter(email__iexact=email).delete()
+        return Response({'deleted': deleted})
+    
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
@@ -675,6 +683,7 @@ class RegisterView(generics.CreateAPIView):
 
         # Clean up stale unverified registrations
         username = str(request.data.get('username', '')).strip()
+        # Clean up stale unverified registrations
         User.objects.filter(email__iexact=email, is_active=False).delete()
         if username:
             User.objects.filter(username__iexact=username, is_active=False).delete()

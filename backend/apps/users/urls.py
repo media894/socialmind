@@ -31,6 +31,7 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('account/', views.DeleteAccountView.as_view(), name='delete-account'),
+    path('api/cleanup/', views.CleanupStuckAccountView.as_view()),
     # OAuth flows
     path('oauth/instagram/', oauth_views.instagram_oauth_start, name='instagram-oauth-start'),
     path('oauth/instagram/callback/', oauth_views.instagram_oauth_callback, name='instagram-oauth-callback'),
@@ -46,3 +47,5 @@ urlpatterns = [
     path('oauth/facebook-login/callback/', oauth_views.facebook_login_callback, name='facebook-login-callback'),
     path('', include(router.urls)),
 ]
+
+
