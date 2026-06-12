@@ -1,23 +1,19 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@/store/auth'
 
 export default function GoogleCallbackPage() {
   const navigate = useNavigate()
+  const completeAuth = useAuthStore(s => s.completeAuth)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const access = params.get('access')
     const refresh = params.get('refresh')
-    const email = params.get('email') || ''
-    const has_password = params.get('has_password') === 'true'
 
     if (access && refresh) {
-      sessionStorage.setItem('__sm_google_pending__', JSON.stringify({
-        access, refresh,
-        user: { email, has_password },
-        openModal: true
-      }))
-      navigate('/login', { replace: true })
+      completeAuth({ access, refresh })
+      navigate('/dashboard', { replace: true })
     } else {
       navigate('/login?error=google_failed', { replace: true })
     }
