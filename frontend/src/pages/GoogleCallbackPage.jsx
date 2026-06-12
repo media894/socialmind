@@ -1,10 +1,8 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/auth'
 
 export default function GoogleCallbackPage() {
   const navigate = useNavigate()
-  const init = useAuthStore(s => s.init)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -12,9 +10,13 @@ export default function GoogleCallbackPage() {
     const refresh = params.get('refresh')
 
     if (access && refresh) {
-      localStorage.setItem('access_token', access)
-      localStorage.setItem('refresh_token', refresh)
-      init().then(() => navigate('/dashboard', { replace: true }))
+      // Store temporarily for the auth component to pick up
+      localStorage.setItem('__sm_google_auth__', JSON.stringify({
+        type: 'socialmind-google-auth',
+        access,
+        refresh,
+      }))
+      navigate('/login', { replace: true })
     } else {
       navigate('/login?error=google_failed', { replace: true })
     }
