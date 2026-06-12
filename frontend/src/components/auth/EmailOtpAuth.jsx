@@ -232,27 +232,19 @@ export default function EmailOtpAuth({
   }, [])
 
   const openGooglePopup = () => {
-    if (tab === 'signup' && !termsAccepted) {
-      setError('Please accept the Terms and Privacy Policy to create an account.')
-      return
-    }
-    const popup = window.open('', 'socialmind-google-auth',
-      'width=520,height=680,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes')
-    if (!popup) { toast.error('Allow popups to continue with Google.'); return }
-    googlePopupRef.current = popup
-    popup.document.write('<p style="font-family:sans-serif;padding:24px">Opening Google sign-in…</p>')
-    popup.document.close()
-    socialAccountsApi.googleAuthStart()
-      .then(({ data }) => {
-        if (!data?.auth_url) throw new Error('No auth URL')
-        popup.location.href = data.auth_url
-      })
-      .catch(err => {
-        if (googlePopupRef.current && !googlePopupRef.current.closed) googlePopupRef.current.close()
-        googlePopupRef.current = null
-        toast.error(err.response?.data?.error || err.message || 'Failed to start Google sign-in.')
-      })
+  if (tab === 'signup' && !termsAccepted) {
+    setError('Please accept the Terms and Privacy Policy to create an account.')
+    return
   }
+  socialAccountsApi.googleAuthStart()
+    .then(({ data }) => {
+      if (!data?.auth_url) throw new Error('No auth URL')
+      window.location.href = data.auth_url
+    })
+    .catch(err => {
+      toast.error(err.response?.data?.error || err.message || 'Failed to start Google sign-in.')
+    })
+}
 
   const openFacebookPopup = () => {
     if (tab === 'signup' && !termsAccepted) {
