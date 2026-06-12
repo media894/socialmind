@@ -519,36 +519,13 @@ def google_login_callback(request):
     user.last_name = str(userinfo.get('family_name') or user.last_name or '').strip()
     user.save(update_fields=['first_name', 'last_name'])
 
-    payload = {
-        'type': 'socialmind-google-auth',
-        **_issue_tokens_for_user(user),
-    }
+    tokens = _issue_tokens_for_user(user)
+    access = tokens['access']
+    refresh = tokens['refresh']
 
-    html = f"""
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Signing you in...</title>
-  </head>
-  <body>
-    <script>
-      (function() {{
-        const payload = {json.dumps(payload)};
-        const targetOrigin = {json.dumps(frontend_origin)};
-        if (window.opener) {{
-          window.opener.postMessage(payload, targetOrigin);
-          window.close();
-        }} else {{
-          try {{ localStorage.setItem('__sm_google_auth__', JSON.stringify(payload)); }} catch(e) {{}}
-          document.body.innerHTML = '<p>Authentication complete. You can close this window.</p>';
-        }}
-      }})();
-    </script>
-  </body>
-</html>
-"""
-    return HttpResponse(html, content_type='text/html')
+    return HttpResponseRedirect(
+        f'{frontend_origin}/auth/google/callback?access={access}&refresh={refresh}'
+    )
 
 
 # ─── Twitter / X OAuth 2.0 PKCE ──────────────────────────────────────────────
