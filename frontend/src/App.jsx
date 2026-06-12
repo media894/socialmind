@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from '@/store/auth'
 import { getAccessLevel } from '@/utils/trialAccess.js'
+import GoogleCallbackPage from '@/pages/GoogleCallbackPage'
 
 // Pages
 import LoginPage from '@/pages/LoginPage'
