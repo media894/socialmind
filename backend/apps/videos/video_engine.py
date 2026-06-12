@@ -206,6 +206,22 @@ class VideoGenerator:
         if not video_clips:
             raise Exception("No Pexels videos found")
 
+        import shutil as _shutil
+        if not _shutil.which('ffmpeg'):
+            logger.warning("FFmpeg not available, returning raw Pexels URL")
+            return {
+                'success': True,
+                'output_path': None,
+                'pexels_url': video_clips[0] if video_clips else '',
+                'filename': output_filename,
+                'duration': duration,
+                'resolution': f'{w}x{h}',
+                'format': 'mp4',
+                'file_size': 0,
+                'scenes_count': 1,
+                'has_footage': True,
+            }
+
         # Split script into scenes
         num_scenes = max(2, duration // 6)
         scenes = split_scenes(script, num_scenes)

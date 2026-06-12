@@ -141,7 +141,15 @@ def generate_video_task(self, project_id: str, api_key_config_id: int):
         # ── Step 7: Save to Storage ──────────────────────────────────
         self.update_state(state='PROGRESS', meta={'step': 'Saving video', 'progress': 92})\
 
-        video_url = _upload_to_storage(video_result.get('output_path'), f"videos/{project_id}.mp4")
+        output_path = video_result.get('output_path')
+        pexels_url = video_result.get('pexels_url', '')
+        if output_path:
+            video_url = _upload_to_storage(output_path, f"videos/{project_id}.mp4")
+        elif pexels_url:
+            video_url = pexels_url
+            logger.info(f"Using Pexels URL directly: {video_url}")
+        else:
+            video_url = ''
         thumbnail_url = _upload_to_storage(thumbnail_path, f"thumbnails/{project_id}.jpg") if thumbnail_path else ''
 
         # ── Update Project ───────────────────────────────────────────
