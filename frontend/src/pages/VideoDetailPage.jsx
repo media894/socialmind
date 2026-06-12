@@ -228,12 +228,10 @@ export default function VideoDetailPage() {
             <h1 className="text-2xl font-bold text-white">{video.title}</h1>
             <StatusBadge status={video.status} />
           </div>
-          <p className="text-white/40 text-sm capitalize">{video.content_type} · {video.duration_seconds}s · {video.ai_service}</p>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2 flex-wrap">
-          {/* Regenerate */}
           {['draft', 'review', 'failed'].includes(video.status) && (
             <button
               onClick={() => regenerateMutation.mutate()}
@@ -245,7 +243,6 @@ export default function VideoDetailPage() {
             </button>
           )}
 
-          {/* Reject */}
           {isReview && (
             <button
               onClick={() => rejectMutation.mutate()}
@@ -256,7 +253,6 @@ export default function VideoDetailPage() {
             </button>
           )}
 
-          {/* Approve */}
           {isReview && (
             <button
               onClick={() => approveMutation.mutate()}
@@ -268,7 +264,6 @@ export default function VideoDetailPage() {
             </button>
           )}
 
-          {/* Schedule */}
           {isApproved && (
             <>
               <button
@@ -358,26 +353,11 @@ export default function VideoDetailPage() {
               Preview is unavailable right now, but your thumbnail is shown instead.
             </p>
           )}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            {[
-              ['Topic', video.topic],
-              ['Tone', video.tone || '—'],
-              ['Duration', `${video.duration_seconds}s`],
-              ['AI Service', video.ai_service],
-            ].map(([label, val]) => (
-              <div key={label} className="glass rounded-xl p-3">
-                <div className="text-white/40 text-xs mb-0.5">{label}</div>
-                <div className="text-white text-sm font-medium truncate">{val}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Script & Caption */}
         <div className="space-y-4 lg:col-span-2">
-          {/* Script */}
           {video.ai_script && (() => {
-            // Clean script - remove JSON if present
             let script = video.ai_script || ''
             try {
               if (script.trim().startsWith('{')) {
@@ -386,12 +366,12 @@ export default function VideoDetailPage() {
               }
             } catch(e) {}
             return (
-            <div className="glass-card p-5">
-              <h2 className="font-semibold text-white mb-3">AI Script</h2>
-              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-line">
-                {script}
-              </p>
-            </div>
+              <div className="glass-card p-5">
+                <h2 className="font-semibold text-white mb-3">AI Script</h2>
+                <p className="text-white/70 text-sm leading-relaxed whitespace-pre-line">
+                  {script}
+                </p>
+              </div>
             )
           })()}
 
