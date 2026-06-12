@@ -529,6 +529,14 @@ def _resolve_platform_video_source(project, platform: str, platform_subtype: str
     source = _resolve_project_video_source(project)
     local_path = source.get('local_path') or ''
     if not local_path or not os.path.exists(local_path):
+        pub = source.get('public_url', '')
+        if pub and pub.startswith('https://') and platform in {'instagram', 'facebook'}:
+            return {
+                'local_path': '',
+                'public_url': pub,
+                'ratio': '',
+                'resolution': '',
+            }
         raise Exception('Could not find the source video file for publishing.')
 
     resolved_platform = platform
@@ -597,11 +605,12 @@ def _resolve_project_video_source(project) -> dict:
             logger.info('Downloaded video to %s', local_path)
         except Exception as e:
             logger.warning('Failed to download video from URL: %s', e)
-        if not public_url:
-            relative_url = project.video_file.url
-            public_base = getattr(settings, 'PUBLIC_APP_URL', '').rstrip('/')
-            if public_base:
-                public_url = f"{public_base}{relative_url}"
+
+    if not public_url:
+        relative_url = project.video_file.url
+        public_base = getattr(settings, 'PUBLIC_APP_URL', '').rstrip('/')
+        if public_base:
+            public_url = f"{public_base}{relative_url}"
 
     if not local_path and public_url.startswith(settings.MEDIA_URL):
         relative_path = public_url[len(settings.MEDIA_URL):].lstrip('/')
