@@ -98,7 +98,9 @@ const PLANS = [
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const [showForm, setShowForm] = useState(false)
+  const [showForm, setShowForm] = useState(() => {
+  return !!sessionStorage.getItem('__sm_google_pending__')
+})
   const [mode, setMode] = useState('login')
   const [plansOpen, setPlansOpen] = useState(false)
   const [activeMenu, setActiveMenu] = useState(null)

@@ -14,7 +14,8 @@ export default function GoogleCallbackPage() {
     if (access && refresh) {
       sessionStorage.setItem('__sm_google_pending__', JSON.stringify({
         access, refresh,
-        user: { email, has_password }
+        user: { email, has_password },
+        openModal: true
       }))
       navigate('/login', { replace: true })
     } else {

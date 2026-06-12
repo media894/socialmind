@@ -137,14 +137,21 @@ export default function EmailOtpAuth({
 
   useEffect(() => { if (!open) resetAll() }, [open])
   useEffect(() => {
-  const pending = sessionStorage.getItem('__sm_google_pending__')
-  if (pending) {
-    sessionStorage.removeItem('__sm_google_pending__')
-    try {
-      const { access, refresh } = JSON.parse(pending)
-      openGooglePasswordGate({ type: 'socialmind-google-auth', access, refresh })
-    } catch {}
-  }
+  setTimeout(() => {
+    const pending = sessionStorage.getItem('__sm_google_pending__')
+    if (pending) {
+      sessionStorage.removeItem('__sm_google_pending__')
+      try {
+        const parsed = JSON.parse(pending)
+        openGooglePasswordGate({ 
+          type: 'socialmind-google-auth', 
+          access: parsed.access, 
+          refresh: parsed.refresh,
+          user: parsed.user
+        })
+      } catch {}
+    }
+  }, 100)
 }, [])
 
   const resetAll = () => {
