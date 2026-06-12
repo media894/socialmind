@@ -392,7 +392,7 @@ def _upload_to_cloudinary(local_path: str, s3_key: str) -> str:
             return ''
 
         if cloudinary_url:
-            cloudinary.config(cloudinary_url=cloudinary_url)
+            cloudinary.config(url=cloudinary_url)
         else:
             cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
 
