@@ -522,9 +522,11 @@ def google_login_callback(request):
     tokens = _issue_tokens_for_user(user)
     access = tokens['access']
     refresh = tokens['refresh']
+    user_email = user.email
+    has_password = user.has_usable_password()
 
     return HttpResponseRedirect(
-        f'{frontend_origin}/auth/google/callback?access={access}&refresh={refresh}'
+        f'{frontend_origin}/auth/google/callback?access={access}&refresh={refresh}&email={user_email}&has_password={str(has_password).lower()}'
     )
 
 
