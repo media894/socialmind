@@ -173,7 +173,7 @@ class SocialAccount(models.Model):
     platform_user_id = models.CharField(max_length=255)
     platform_username = models.CharField(max_length=255)
     platform_name = models.CharField(max_length=255, blank=True)
-    avatar_url = models.URLField(blank=True)
+    avatar_url = models.URLField(blank=True, max_length=500)
     encrypted_access_token = models.BinaryField()
     encrypted_refresh_token = models.BinaryField(null=True, blank=True)
     token_expires_at = models.DateTimeField(null=True, blank=True)
