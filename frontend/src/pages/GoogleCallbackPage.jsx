@@ -10,12 +10,7 @@ export default function GoogleCallbackPage() {
     const refresh = params.get('refresh')
 
     if (access && refresh) {
-      // Store temporarily for the auth component to pick up
-      localStorage.setItem('__sm_google_auth__', JSON.stringify({
-        type: 'socialmind-google-auth',
-        access,
-        refresh,
-      }))
+      sessionStorage.setItem('__sm_google_pending__', JSON.stringify({ access, refresh }))
       navigate('/login', { replace: true })
     } else {
       navigate('/login?error=google_failed', { replace: true })

@@ -136,6 +136,16 @@ export default function EmailOtpAuth({
   const [googleUsernameOk, setGoogleUsernameOk] = useState(false)
 
   useEffect(() => { if (!open) resetAll() }, [open])
+  useEffect(() => {
+  const pending = sessionStorage.getItem('__sm_google_pending__')
+  if (pending) {
+    sessionStorage.removeItem('__sm_google_pending__')
+    try {
+      const { access, refresh } = JSON.parse(pending)
+      openGooglePasswordGate({ type: 'socialmind-google-auth', access, refresh })
+    } catch {}
+  }
+}, [])
 
   const resetAll = () => {
     if (googlePopupRef.current && !googlePopupRef.current.closed) googlePopupRef.current.close()
