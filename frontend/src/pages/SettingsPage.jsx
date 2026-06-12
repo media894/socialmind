@@ -2064,6 +2064,17 @@ function SocialAccountsSection() {
     onError: () => toast.error('Failed to start Google OAuth'),
   })
 
+
+const linkedinConnectMutation = useMutation({
+    mutationFn: () => socialAccountsApi.linkedinOAuthStart(),
+    onSuccess: ({ data }) => {
+      const authUrl = data?.auth_url
+      if (!authUrl) { toast.error('LinkedIn OAuth URL was not returned'); return }
+      window.location.href = authUrl
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed to start LinkedIn OAuth'),
+  })
+
   const twitterConnectMutation = useMutation({
     mutationFn: () => socialAccountsApi.twitterOAuthStart(),
     onSuccess: ({ data }) => {
@@ -2412,6 +2423,22 @@ function SocialAccountsSection() {
               >
                 {youtubeConnectMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Connect YouTube with Google
+              </button>
+            </div>
+          )}
+
+          {demoForm.platform === 'linkedin' && (
+            <div className="rounded-xl border border-[#0a66c2]/20 bg-[#0a66c2]/10 px-4 py-3 text-xs text-blue-100 space-y-2">
+              <p className="font-medium">Recommended: connect with LinkedIn</p>
+              <p>Use the LinkedIn OAuth button below — you'll log in on LinkedIn's site and approve posting permissions.</p>
+              <button
+                type="button"
+                onClick={() => linkedinConnectMutation.mutate()}
+                disabled={linkedinConnectMutation.isPending}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#0a66c2] text-white px-3 py-2 font-semibold hover:bg-[#0958a8] transition disabled:opacity-60"
+              >
+                {linkedinConnectMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                Connect LinkedIn with OAuth
               </button>
             </div>
           )}

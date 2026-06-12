@@ -90,6 +90,7 @@ export const socialAccountsApi = {
   instagramOAuthStart: () => api.get('/auth/oauth/instagram/'),
   youtubeOAuthStart: () => api.get('/auth/oauth/youtube/'),
   twitterOAuthStart: () => api.get('/auth/oauth/twitter/'),
+  linkedinOAuthStart: () => api.get('/social-accounts/linkedin/oauth/start/'),
   disconnect: (id) => api.post(`/auth/social-accounts/${id}/disconnect/`),
   byPlatform: (platform) => api.get('/auth/social-accounts/by_platform/', { params: { platform } }),
   publishStatus: (id) => api.get(`/auth/social-accounts/${id}/publish_status/`),

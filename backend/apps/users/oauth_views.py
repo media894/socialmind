@@ -241,18 +241,20 @@ def instagram_oauth_callback(request):
 
 # ─── LinkedIn OAuth ───────────────────────────────────────────────────────────
 
+# ─── LinkedIn OAuth ───────────────────────────────────────────────────────────
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def linkedin_oauth_start(request):
     """Redirect user to LinkedIn OAuth consent screen"""
     client_id = os.environ.get('LINKEDIN_CLIENT_ID', '')
-    redirect_uri = request.build_absolute_uri('/api/v1/auth/oauth/linkedin/callback/')
-    scopes = 'w_member_social r_basicprofile r_liteprofile'
+    redirect_uri = _public_oauth_redirect_uri('/api/v1/auth/oauth/linkedin/callback/', 'LINKEDIN_OAUTH_REDIRECT_BASE')
+    scopes = 'openid profile w_member_social'
     url = (
         f'https://www.linkedin.com/oauth/v2/authorization'
         f'?response_type=code'
         f'&client_id={client_id}'
-        f'&redirect_uri={redirect_uri}'
+        f'&redirect_uri={quote(redirect_uri, safe="")}'
         f'&state={request.user.id}'
         f'&scope={scopes.replace(" ", "%20")}'
     )
@@ -260,19 +262,25 @@ def linkedin_oauth_start(request):
 
 
 @api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def linkedin_oauth_callback(request):
     """Handle OAuth callback from LinkedIn"""
     code = request.GET.get('code')
     user_id = request.GET.get('state')
+    error = request.GET.get('error')
+    frontend_origin = _frontend_origin()
 
+    if error:
+        return HttpResponseRedirect(f'{frontend_origin}/settings?error=linkedin_denied')
     if not code or not user_id:
-        return Response({'error': 'Missing code or state'}, status=400)
+        return HttpResponseRedirect(f'{frontend_origin}/settings?error=linkedin_missing_params')
 
     client_id = os.environ.get('LINKEDIN_CLIENT_ID', '')
     client_secret = os.environ.get('LINKEDIN_CLIENT_SECRET', '')
-    redirect_uri = request.build_absolute_uri('/api/v1/auth/oauth/linkedin/callback/')
+    redirect_uri = _public_oauth_redirect_uri('/api/v1/auth/oauth/linkedin/callback/', 'LINKEDIN_OAUTH_REDIRECT_BASE')
 
-    with httpx.Client() as client:
+    with httpx.Client(timeout=30) as client:
         token_resp = client.post(
             'https://www.linkedin.com/oauth/v2/accessToken',
             data={
@@ -281,40 +289,42 @@ def linkedin_oauth_callback(request):
                 'redirect_uri': redirect_uri,
                 'client_id': client_id,
                 'client_secret': client_secret,
-            }
+            },
+            headers={'Content-Type': 'application/x-www-form-urlencoded'},
         )
         token_data = token_resp.json()
         access_token = token_data.get('access_token')
 
         if not access_token:
-            return Response({'error': f'Token exchange failed: {token_data}'}, status=400)
+            return HttpResponseRedirect(f'{frontend_origin}/settings?error=linkedin_token_failed')
 
-        # Get profile info
         profile_resp = client.get(
-            'https://api.linkedin.com/v2/me',
+            'https://api.linkedin.com/v2/userinfo',
             headers={'Authorization': f'Bearer {access_token}'},
-            params={'fields': 'id,localizedFirstName,localizedLastName'}
         )
         profile = profile_resp.json()
-        li_id = profile.get('id', '')
-        name = f"{profile.get('localizedFirstName', '')} {profile.get('localizedLastName', '')}".strip()
+        li_id = profile.get('sub', '')
+        name = profile.get('name') or f"{profile.get('given_name', '')} {profile.get('family_name', '')}".strip()
 
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    try:
         user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return HttpResponseRedirect(f'{frontend_origin}/settings?error=linkedin_user_not_found')
 
-        account, _ = SocialAccount.objects.update_or_create(
-            user=user, platform='linkedin', platform_user_id=li_id,
-            defaults={
-                'platform_username': li_id,
-                'platform_name': name,
-                'is_active': True,
-            }
-        )
-        account.set_access_token(access_token)
-        account.save()
+    account, _ = SocialAccount.objects.update_or_create(
+        user=user, platform='linkedin', platform_user_id=li_id,
+        defaults={
+            'platform_username': li_id,
+            'platform_name': name,
+            'is_active': True,
+        }
+    )
+    account.set_access_token(access_token)
+    account.save()
 
-    return HttpResponseRedirect(f'{_frontend_origin()}/settings?connected=linkedin')
+    return HttpResponseRedirect(f'{frontend_origin}/settings?connected=linkedin')
 
 
 # ─── YouTube OAuth ────────────────────────────────────────────────────────────
