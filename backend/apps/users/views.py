@@ -700,7 +700,7 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        # Activate immediately — no OTP needed
+        # Activate immediately â€” no OTP needed
         user.is_active = True
         user.email_verified = True
         user.save(update_fields=['is_active', 'email_verified'])
@@ -1347,3 +1347,4 @@ class SocialAccountViewSet(viewsets.ModelViewSet):
         account.save()
 
         return Response(SocialAccountSerializer(account).data, status=201 if created else 200)
+
