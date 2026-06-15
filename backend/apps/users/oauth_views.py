@@ -469,19 +469,15 @@ def google_login_start(request):
 
     redirect_uri = _google_oauth_redirect_uri(request, '/api/v1/auth/oauth/google/callback/')
     scopes = 'openid email profile'
-    # Use prompt=select_account (without "consent") so Google only shows the
-    # account chooser — not the full re-consent / phone-verification screen.
-    # "consent" forces Google to re-verify the user every time, which triggers
-    # phone verification. Dropping it means existing Google sessions skip straight
-    # to the account picker and back to our callback.
     url = (
         'https://accounts.google.com/o/oauth2/v2/auth'
         f'?client_id={client_id}'
         f'&redirect_uri={quote(redirect_uri, safe="")}'
         f'&response_type=code'
         f'&scope={scopes.replace(" ", "%20")}'
-        f'&access_type=online'
-        f'&prompt=select_account'
+        f'&access_type=offline'
+        f'&prompt=select_account%20consent'
+        f'&include_granted_scopes=true'
     )
     return Response({'auth_url': url})
 
@@ -528,20 +524,42 @@ def google_login_callback(request):
     if not email:
         return Response({'error': 'Google did not return an email address.'}, status=400)
 
-    user = _get_or_create_workspace_account(email)
-    user.first_name = str(userinfo.get('given_name') or user.first_name or '').strip()
-    user.last_name = str(userinfo.get('family_name') or user.last_name or '').strip()
-    user.save(update_fields=['first_name', 'last_name'])
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
 
-    tokens = _issue_tokens_for_user(user)
-    access = tokens['access']
-    refresh = tokens['refresh']
-    user_email = user.email
-    has_password = user.has_usable_password()
+    first_name = str(userinfo.get('given_name') or '').strip()
+    last_name = str(userinfo.get('family_name') or '').strip()
 
-    return HttpResponseRedirect(
-        f'{frontend_origin}/auth/google/callback?access={access}&refresh={refresh}&email={user_email}&has_password={str(has_password).lower()}'
-    )
+    existing_user = User.objects.filter(email__iexact=email).first()
+
+    if existing_user:
+        # ── Existing account: issue tokens and send to password gate ──────────
+        existing_user.first_name = first_name or existing_user.first_name
+        existing_user.last_name = last_name or existing_user.last_name
+        existing_user.save(update_fields=['first_name', 'last_name'])
+
+        tokens = _issue_tokens_for_user(existing_user)
+        access = tokens['access']
+        refresh = tokens['refresh']
+        has_password = existing_user.has_usable_password()
+
+        return HttpResponseRedirect(
+            f'{frontend_origin}/auth/google/callback'
+            f'?access={access}&refresh={refresh}'
+            f'&email={existing_user.email}'
+            f'&has_password={str(has_password).lower()}'
+            f'&is_new=false'
+        )
+    else:
+        # ── New email: do NOT create account, redirect to signup form ─────────
+        from urllib.parse import quote as urlquote
+        return HttpResponseRedirect(
+            f'{frontend_origin}/login'
+            f'?google_email={urlquote(email)}'
+            f'&google_first_name={urlquote(first_name)}'
+            f'&google_last_name={urlquote(last_name)}'
+            f'&action=signup'
+        )
 
 
 # ─── Twitter / X OAuth 2.0 PKCE ──────────────────────────────────────────────

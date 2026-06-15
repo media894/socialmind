@@ -79,6 +79,7 @@ function PasswordStrength({ password }) {
 
 export default function EmailOtpAuth({
   mode = 'login',
+  prefillEmail = '',
   variant = 'embedded',
   open = true,
   onClose,
@@ -104,7 +105,7 @@ export default function EmailOtpAuth({
 
   // ── Signup states ────────────────────────────────────────────────────────────
   const [signupUsername, setSignupUsername] = useState('')
-  const [signupEmail, setSignupEmail] = useState('')
+  const [signupEmail, setSignupEmail] = useState(prefillEmail || '')
   const [signupEmailCheck, setSignupEmailCheck] = useState(null)
   const [signupPwd, setSignupPwd] = useState('')
   const [signupPwdConfirm, setSignupPwdConfirm] = useState('')

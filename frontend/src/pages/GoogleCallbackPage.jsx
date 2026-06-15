@@ -10,8 +10,17 @@ export default function GoogleCallbackPage() {
     const params = new URLSearchParams(window.location.search)
     const access = params.get('access')
     const refresh = params.get('refresh')
+    const action = params.get('action')
+    const googleEmail = params.get('google_email')
 
-    if (access && refresh) {
+    if (action === 'signup' && googleEmail) {
+      // New user — redirect to login page with signup tab pre-filled
+      navigate(
+        `/login?google_email=${encodeURIComponent(googleEmail)}&action=signup`,
+        { replace: true }
+      )
+    } else if (access && refresh) {
+      // Existing user — complete login and go to dashboard
       completeAuth({ access, refresh })
       navigate('/dashboard', { replace: true })
     } else {

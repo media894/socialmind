@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   BarChart3,
   Calendar,
@@ -98,10 +98,19 @@ const PLANS = [
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Read ?google_email=...&action=signup from Google OAuth redirect for new users
+  const urlParams = new URLSearchParams(location.search)
+  const googleEmailParam = urlParams.get('google_email') || ''
+  const actionParam = urlParams.get('action') || ''
+
   const [showForm, setShowForm] = useState(() => {
-  return !!sessionStorage.getItem('__sm_google_pending__')
-})
-  const [mode, setMode] = useState('login')
+    return !!sessionStorage.getItem('__sm_google_pending__') || actionParam === 'signup' || !!googleEmailParam
+  })
+  const [mode, setMode] = useState(() => {
+    return (actionParam === 'signup' || googleEmailParam) ? 'register' : 'login'
+  })
   const [plansOpen, setPlansOpen] = useState(false)
   const [activeMenu, setActiveMenu] = useState(null)
   const [termsOpen, setTermsOpen] = useState(false)
@@ -493,6 +502,7 @@ export default function LoginPage() {
               <EmailOtpAuth
                 mode={mode}
                 variant="embedded"
+                prefillEmail={googleEmailParam}
                 onComplete={() => navigate('/dashboard')}
               />
             </div>
