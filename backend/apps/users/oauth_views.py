@@ -469,15 +469,19 @@ def google_login_start(request):
 
     redirect_uri = _google_oauth_redirect_uri(request, '/api/v1/auth/oauth/google/callback/')
     scopes = 'openid email profile'
+    # Use prompt=select_account (without "consent") so Google only shows the
+    # account chooser — not the full re-consent / phone-verification screen.
+    # "consent" forces Google to re-verify the user every time, which triggers
+    # phone verification. Dropping it means existing Google sessions skip straight
+    # to the account picker and back to our callback.
     url = (
         'https://accounts.google.com/o/oauth2/v2/auth'
         f'?client_id={client_id}'
         f'&redirect_uri={quote(redirect_uri, safe="")}'
         f'&response_type=code'
         f'&scope={scopes.replace(" ", "%20")}'
-        f'&access_type=offline'
-        f'&prompt=select_account%20consent'
-        f'&include_granted_scopes=true'
+        f'&access_type=online'
+        f'&prompt=select_account'
     )
     return Response({'auth_url': url})
 
@@ -789,4 +793,3 @@ def facebook_login_callback(request):
 </html>
 """
     return HttpResponse(html, content_type='text/html')
-
