@@ -99,7 +99,7 @@ export default function EmailOtpAuth({
 
   // ── Signup states ────────────────────────────────────────────────────────────
   const [signupUsername, setSignupUsername] = useState('')
-  const [signupEmail, setSignupEmail] = useState(prefillEmail || '')
+  const [signupEmail, setSignupEmail] = useState('')
   const [signupEmailCheck, setSignupEmailCheck] = useState(null)
   const [signupPwd, setSignupPwd] = useState('')
   const [signupPwdConfirm, setSignupPwdConfirm] = useState('')
@@ -132,6 +132,15 @@ export default function EmailOtpAuth({
   const [googleUsernameOk, setGoogleUsernameOk] = useState(false)
 
   useEffect(() => { if (!open) resetAll() }, [open])
+
+  // If prefillEmail provided (Google OAuth new user), pre-fill signup email and switch to signup tab
+  useEffect(() => {
+    if (prefillEmail) {
+      setSignupEmail(prefillEmail.trim().toLowerCase())
+      setSignupUsername('') // never pre-fill username from email
+      setTab('signup')
+    }
+  }, [prefillEmail])
   useEffect(() => {
   setTimeout(() => {
     const pending = sessionStorage.getItem('__sm_google_pending__')
@@ -693,9 +702,10 @@ export default function EmailOtpAuth({
                       {signupEmailCheck?.deliverable && !signupEmailCheck.exists && <CheckCircle2 className="w-4 h-4 text-emerald-400 absolute right-3 top-1/2 -translate-y-1/2" />}
                     </div>
                     {signupEmailCheck?.exists && (
-                      <p className="mt-1.5 text-xs text-red-400">
-                        You already have an account. Please login with your password.
-                        <button type="button" onClick={() => switchTab('login')} className="ml-1 text-brand-400 hover:underline">Login</button>
+                      <p className="mt-1.5 text-xs text-amber-400 flex items-center gap-1">
+                        This email is already registered.{' '}
+                        <button type="button" onClick={() => { switchTab('login'); setLoginEmail(signupEmail) }}
+                          className="text-brand-400 hover:underline font-semibold">Log in instead →</button>
                       </p>
                     )}
                     {signupEmailCheck && !signupEmailCheck.checking && signupEmailCheck.deliverable === false && (
