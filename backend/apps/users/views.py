@@ -35,8 +35,8 @@ from .access_control import (
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-LOGIN_IP_LIMIT = 100
-LOGIN_IP_WINDOW_SECONDS = 5 * 60
+LOGIN_IP_LIMIT = 1000
+LOGIN_IP_WINDOW_SECONDS = 1 * 60
 ENTERPRISE_MONTHLY_VIDEO_QUOTA = 1000000
 PLAN_PRICES = {
     'pro': 29.00,
