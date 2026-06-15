@@ -2,11 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CheckCircle2, Chrome, Eye, EyeOff, Loader2, ShieldCheck, Sparkles, X } from 'lucide-react'
 
-const FacebookIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2" aria-hidden="true">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </svg>
-)
 import toast from 'react-hot-toast'
 import axios from 'axios'
 
@@ -87,7 +82,6 @@ export default function EmailOtpAuth({
 }) {
   const completeAuth = useAuthStore(state => state.completeAuth)
   const googlePopupRef = useRef(null)
-  const facebookPopupRef = useRef(null)
 
   // ── Navigation ───────────────────────────────────────────────────────────────
   // tab: 'login' | 'signup'
@@ -159,8 +153,6 @@ export default function EmailOtpAuth({
   const resetAll = () => {
     if (googlePopupRef.current && !googlePopupRef.current.closed) googlePopupRef.current.close()
     googlePopupRef.current = null
-    if (facebookPopupRef.current && !facebookPopupRef.current.closed) facebookPopupRef.current.close()
-    facebookPopupRef.current = null
     setOauthProvider('google')
     setTab(mode === 'register' ? 'signup' : 'login')
     setStage('main')
@@ -203,8 +195,6 @@ export default function EmailOtpAuth({
   const openGooglePasswordGate = (data, provider = 'google') => {
     if (googlePopupRef.current && !googlePopupRef.current.closed) googlePopupRef.current.close()
     googlePopupRef.current = null
-    if (facebookPopupRef.current && !facebookPopupRef.current.closed) facebookPopupRef.current.close()
-    facebookPopupRef.current = null
     setOauthProvider(provider)
     const userEmail = data.user?.email || ''
     const hasPassword = data.user?.has_password === true || localStorage.getItem(`sm_google_has_pwd_${userEmail}`) === '1'
@@ -225,10 +215,9 @@ export default function EmailOtpAuth({
   useEffect(() => {
     const handle = (event) => {
       const data = event.data
-      if (!data || (data.type !== 'socialmind-google-auth' && data.type !== 'socialmind-facebook-auth')) return
+      if (!data || data.type !== 'socialmind-google-auth') return
       if (!data.access || !data.refresh || !data.user) return
-      const provider = data.type === 'socialmind-facebook-auth' ? 'facebook' : 'google'
-      openGooglePasswordGate(data, provider)
+      openGooglePasswordGate(data, 'google')
     }
     window.addEventListener('message', handle)
     return () => window.removeEventListener('message', handle)
@@ -236,14 +225,13 @@ export default function EmailOtpAuth({
 
   useEffect(() => {
     const handle = (event) => {
-      if (event.key !== '__sm_google_auth__' && event.key !== '__sm_facebook_auth__') return
+      if (event.key !== '__sm_google_auth__') return
       try {
         const data = JSON.parse(event.newValue)
-        if (!data || (data.type !== 'socialmind-google-auth' && data.type !== 'socialmind-facebook-auth')) return
+        if (!data || data.type !== 'socialmind-google-auth') return
         if (!data.access || !data.refresh || !data.user) return
         localStorage.removeItem(event.key)
-        const provider = data.type === 'socialmind-facebook-auth' ? 'facebook' : 'google'
-        openGooglePasswordGate(data, provider)
+        openGooglePasswordGate(data, 'google')
       } catch {}
     }
     window.addEventListener('storage', handle)
@@ -251,42 +239,17 @@ export default function EmailOtpAuth({
   }, [])
 
   const openGooglePopup = () => {
-  if (tab === 'signup' && !termsAccepted) {
-    setError('Please accept the Terms and Privacy Policy to create an account.')
-    return
-  }
-  socialAccountsApi.googleAuthStart()
-    .then(({ data }) => {
-      if (!data?.auth_url) throw new Error('No auth URL')
-      window.location.href = data.auth_url
-    })
-    .catch(err => {
-      toast.error(err.response?.data?.error || err.message || 'Failed to start Google sign-in.')
-    })
-}
-
-  const openFacebookPopup = () => {
-    if (tab === 'signup' && !termsAccepted) {
-      setError('Please accept the Terms and Privacy Policy to create an account.')
-      return
-    }
-    const popup = window.open('', 'socialmind-facebook-auth',
-      'width=520,height=680,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes')
-    if (!popup) { toast.error('Allow popups to continue with Facebook.'); return }
-    facebookPopupRef.current = popup
-    popup.document.write('<p style="font-family:sans-serif;padding:24px">Opening Facebook sign-in…</p>')
-    popup.document.close()
-    socialAccountsApi.facebookAuthStart()
+    socialAccountsApi.googleAuthStart()
       .then(({ data }) => {
         if (!data?.auth_url) throw new Error('No auth URL')
-        popup.location.href = data.auth_url
+        window.location.href = data.auth_url
       })
       .catch(err => {
-        if (facebookPopupRef.current && !facebookPopupRef.current.closed) facebookPopupRef.current.close()
-        facebookPopupRef.current = null
-        toast.error(err.response?.data?.error || err.message || 'Failed to start Facebook sign-in.')
+        toast.error(err.response?.data?.error || err.message || 'Failed to start Google sign-in.')
       })
   }
+
+
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -559,13 +522,6 @@ export default function EmailOtpAuth({
     </button>
   )
 
-  const FacebookBtn = () => (
-    <button type="button" onClick={openFacebookPopup}
-      className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white text-[#111827] px-4 py-3 font-semibold transition hover:bg-white/95">
-      <FacebookIcon />
-      Continue with Facebook
-    </button>
-  )
 
   const Divider = () => (
     <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-white/25 my-4">
@@ -605,7 +561,6 @@ export default function EmailOtpAuth({
 
               <div className="space-y-2">
                 <GoogleBtn />
-                <FacebookBtn />
               </div>
               <Divider />
 
@@ -965,14 +920,12 @@ export default function EmailOtpAuth({
                 {googlePasswordMode === 'set' ? 'Set your password' : 'Enter your password'}
               </h2>
               <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5 mb-4">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${oauthProvider === 'facebook' ? 'bg-[#1877F2]/20' : 'bg-[#4285F4]/20'}`}>
-                  {oauthProvider === 'facebook'
-                    ? <FacebookIcon />
-                    : <Chrome className="w-3.5 h-3.5 text-[#4285F4]" />}
+                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 bg-[#4285F4]/20">
+                  <Chrome className="w-3.5 h-3.5 text-[#4285F4]" />
                 </div>
                 <span className="text-white/60 text-sm truncate">{googleEmail}</span>
                 <span className="ml-auto text-[10px] text-emerald-400 font-semibold">
-                  {oauthProvider === 'facebook' ? 'Facebook verified' : 'Google verified'}
+                  Google verified
                 </span>
               </div>
               {googlePasswordMode === 'set' && (
