@@ -557,7 +557,15 @@ class PasswordResetStartView(APIView):
         user = User.objects.filter(email__iexact=email, is_active=True).first()
         if not user:
             return Response({'detail': 'No account found for this email address.'}, status=status.HTTP_404_NOT_FOUND)
-        challenge = _send_otp(user, purpose='password_reset', channel='email')
+        try:
+            challenge = _send_otp(user, purpose='password_reset', channel='email')
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).error('Password reset OTP send failed: %s', exc, exc_info=True)
+            return Response(
+                {'detail': 'Failed to send reset code. Please try again or contact support.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return Response({
             'message': 'Password reset code sent to your email.',
             **_otp_response_payload(challenge),
