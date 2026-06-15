@@ -669,7 +669,7 @@ export default function EmailOtpAuth({
 
               {/* ── Sign Up form ── */}
               {tab === 'signup' && (
-                <form onSubmit={handleSignup} className="space-y-4">
+                <form onSubmit={handleSignup} className="space-y-4" autoComplete="off">
                   <div>
                     <label className="label">Username</label>
                     <input type="text"
@@ -1043,5 +1043,6 @@ export default function EmailOtpAuth({
     </div>
   )
 }
+
 
 
