@@ -72,6 +72,7 @@ export default function App() {
         <Routes>
           <Route path="/watch/:projectId" element={<WatchPage />} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
           <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
           <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
