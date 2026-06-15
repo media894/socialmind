@@ -1347,4 +1347,3 @@ class SocialAccountViewSet(viewsets.ModelViewSet):
         account.save()
 
         return Response(SocialAccountSerializer(account).data, status=201 if created else 200)
-
