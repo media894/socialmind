@@ -99,6 +99,7 @@ export default function EmailOtpAuth({
 
   // ── Signup states ────────────────────────────────────────────────────────────
   const [signupUsername, setSignupUsername] = useState('')
+  useEffect(() => { setTimeout(() => setSignupUsername(''), 100) }, [])
   const [signupEmail, setSignupEmail] = useState('')
   const [signupEmailCheck, setSignupEmailCheck] = useState(null)
   const [signupPwd, setSignupPwd] = useState('')
@@ -1042,3 +1043,4 @@ export default function EmailOtpAuth({
     </div>
   )
 }
+
