@@ -97,6 +97,7 @@ export default function EmailOtpAuth({
   const [error, setError] = useState('')
 
   // ── Login states ─────────────────────────────────────────────────────────────
+  const [loginStep, setLoginStep] = useState('email') // 'email' | 'password'
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPwd, setLoginPwd] = useState('')
   const [loginEmailCheck, setLoginEmailCheck] = useState(null)
@@ -194,7 +195,7 @@ export default function EmailOtpAuth({
     setGoogleUsernameOk(false)
   }
 
-  const switchTab = (newTab) => { setTab(newTab); setStage('main'); setError('') }
+  const switchTab = (newTab) => { setTab(newTab); setStage('main'); setError(''); setLoginStep('email'); setLoginEmailCheck(null) }
   const close = () => { if (onClose) onClose() }
 
   // ── Google OAuth listeners ────────────────────────────────────────────────────
@@ -609,61 +610,95 @@ export default function EmailOtpAuth({
 
               {/* ── Log In form ── */}
               {tab === 'login' && (
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <label className="label">Email or username</label>
-                    <div className="relative">
-                      <input type="text" className={`input pr-10 ${loginEmailCheck && !loginEmailCheck.checking && !loginEmailCheck.exists ? 'border-red-500/50' : loginEmailCheck?.exists ? 'border-emerald-500/50' : error ? 'border-red-500/50' : ''}`}
-                      placeholder="you@company.com or username" value={loginEmail}
-                      onChange={e => { setLoginEmail(e.target.value); setLoginEmailCheck(null); setError('') }}
-                      onBlur={checkLoginIdentifierExists}
-                      required />
-                      {loginEmailCheck?.checking && <Loader2 className="w-4 h-4 text-white/35 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />}
-                      {loginEmailCheck?.exists && <CheckCircle2 className="w-4 h-4 text-emerald-400 absolute right-3 top-1/2 -translate-y-1/2" />}
-                    </div>
-                    {loginEmailCheck && !loginEmailCheck.checking && !loginEmailCheck.exists && (
-                      <p className="mt-1.5 text-xs text-red-400">No account found. Please sign up to create a new account.</p>
-                    )}
-                    {loginEmailCheck?.exists && (
-                      <p className="mt-1.5 text-xs text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Account found. Enter your password.
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="label">Password</label>
-                      <button type="button"
-                        onClick={() => { setForgotEmail(isValidEmail(loginEmail) ? loginEmail : ''); setStage('forgot_send'); setError('') }}
-                        className="text-[11px] text-brand-400 hover:text-brand-300 transition">
-                        Forgot password?
+                <div className="space-y-4">
+                  {/* ── Step 1: Email entry ── */}
+                  {loginStep === 'email' && (
+                    <form onSubmit={async (e) => {
+                      e.preventDefault()
+                      setError('')
+                      if (!loginEmail.trim()) { setError('Enter your email or username.'); return }
+                      setLoading(true)
+                      const result = await checkLoginIdentifierExists()
+                      setLoading(false)
+                      if (result?.exists) {
+                        setLoginStep('password')
+                      } else {
+                        // No account found — switch to signup and pre-fill email
+                        if (isValidEmail(loginEmail.trim())) {
+                          setSignupEmail(loginEmail.trim().toLowerCase())
+                        }
+                        switchTab('signup')
+                        setError('')
+                        toast('No account found. Please sign up to continue.')
+                      }
+                    }} className="space-y-4">
+                      <div>
+                        <label className="label">Email or username</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            className={`input pr-10 ${loginEmailCheck && !loginEmailCheck.checking && !loginEmailCheck.exists ? 'border-red-500/50' : loginEmailCheck?.exists ? 'border-emerald-500/50' : error ? 'border-red-500/50' : ''}`}
+                            placeholder="you@company.com or username"
+                            value={loginEmail}
+                            autoFocus
+                            onChange={e => { setLoginEmail(e.target.value); setLoginEmailCheck(null); setError('') }}
+                            required
+                          />
+                          {loginEmailCheck?.checking && <Loader2 className="w-4 h-4 text-white/35 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />}
+                          {loginEmailCheck?.exists && <CheckCircle2 className="w-4 h-4 text-emerald-400 absolute right-3 top-1/2 -translate-y-1/2" />}
+                        </div>
+                        {error && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
+                      </div>
+                      <button type="submit" disabled={loading}
+                        className="btn-primary w-full h-12 flex items-center justify-center gap-2 disabled:opacity-60">
+                        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Checking…</> : 'Continue'}
                       </button>
-                    </div>
-                    <PasswordField value={loginPwd}
-                      onChange={e => { setLoginPwd(e.target.value); setError('') }}
-                      placeholder="Enter your password" />
-                  </div>
-                  {error && (
-                    <p className="text-xs text-red-400">
-                      {error}
-                      {(error.includes('Sign up') || error.includes('sign up')) && (
+                      <p className="text-center text-xs text-white/30">
+                        Don't have an account?{' '}
                         <button type="button" onClick={() => switchTab('signup')}
-                          className="ml-1 text-brand-400 hover:underline">Sign up free</button>
-                      )}
-                    </p>
+                          className="text-brand-400 hover:text-brand-300 transition font-medium">
+                          Sign up free
+                        </button>
+                      </p>
+                    </form>
                   )}
-                  <button type="submit" disabled={loading}
-                    className="btn-primary w-full h-12 flex items-center justify-center gap-2 disabled:opacity-60">
-                    {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</> : 'Sign In'}
-                  </button>
-                  <p className="text-center text-xs text-white/30">
-                    Don't have an account?{' '}
-                    <button type="button" onClick={() => switchTab('signup')}
-                      className="text-brand-400 hover:text-brand-300 transition font-medium">
-                      Sign up free
-                    </button>
-                  </p>
-                </form>
+
+                  {/* ── Step 2: Password entry (account confirmed to exist) ── */}
+                  {loginStep === 'password' && (
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-sm text-white/80">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span className="truncate">{loginEmail}</span>
+                        </div>
+                        <button type="button"
+                          onClick={() => { setLoginStep('email'); setLoginPwd(''); setLoginEmailCheck(null); setError('') }}
+                          className="text-xs text-brand-400 hover:text-brand-300 transition flex-shrink-0">
+                          Change
+                        </button>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="label">Password</label>
+                          <button type="button"
+                            onClick={() => { setForgotEmail(isValidEmail(loginEmail) ? loginEmail : ''); setStage('forgot_send'); setError('') }}
+                            className="text-[11px] text-brand-400 hover:text-brand-300 transition">
+                            Forgot password?
+                          </button>
+                        </div>
+                        <PasswordField value={loginPwd}
+                          onChange={e => { setLoginPwd(e.target.value); setError('') }}
+                          placeholder="Enter your password"
+                          autoFocus />
+                      </div>
+                      {error && <p className="text-xs text-red-400">{error}</p>}
+                      <button type="submit" disabled={loading}
+                        className="btn-primary w-full h-12 flex items-center justify-center gap-2 disabled:opacity-60">
+                        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</> : 'Sign In'}
+                      </button>
+                    </form>
+                  )}
+                </div>
               )}
 
               {/* ── Sign Up form ── */}
