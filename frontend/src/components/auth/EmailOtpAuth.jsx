@@ -674,7 +674,7 @@ export default function EmailOtpAuth({
                     <label className="label">Username</label>
                     <input type="text"
                       className={`input ${usernameAvailable === false ? 'border-red-500/50' : usernameAvailable === true ? 'border-emerald-500/50' : ''}`}
-                      placeholder="Choose a username" value={signupUsername} autoComplete="off"
+                      placeholder="Choose a username" value={signupUsername} autoComplete="new-password"
                       onChange={e => {
                         const v = e.target.value.replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 30)
                         setSignupUsername(v)
@@ -951,7 +951,7 @@ export default function EmailOtpAuth({
                     <label className="label">Username</label>
                     <input type="text"
                       className={`input ${googleUsernameError ? 'border-red-500/50' : googleUsernameOk ? 'border-emerald-500/50' : ''}`}
-                      placeholder="Choose a username" value={googleUsername} autoComplete="off"
+                      placeholder="Choose a username" value={googleUsername} autoComplete="new-password"
                       onChange={e => {
                         const v = e.target.value.replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 30)
                         setGoogleUsername(v); setGoogleUsernameOk(false); setGoogleUsernameError('')
@@ -1043,4 +1043,5 @@ export default function EmailOtpAuth({
     </div>
   )
 }
+
 
