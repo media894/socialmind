@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { Play, Pause, Volume2, VolumeX, Loader2, AlertCircle } from 'lucide-react'
 import axios from 'axios'
+import { BACKEND_URL } from '@/api/client'
 
 export default function WatchPage() {
   const { projectId } = useParams()
@@ -15,7 +16,7 @@ export default function WatchPage() {
   const [duration, setDuration] = useState(0)
 
   useEffect(() => {
-    axios.get(`/api/v1/videos/public/${projectId}/`)
+    axios.get(`${BACKEND_URL}/videos/public/${projectId}/`)
       .then(r => { setVideoInfo(r.data); setLoading(false) })
       .catch(() => { setError('Video not found or no longer available.'); setLoading(false) })
   }, [projectId])

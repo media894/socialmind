@@ -5,7 +5,7 @@ import { CheckCircle2, Chrome, Eye, EyeOff, Loader2, ShieldCheck, Sparkles, X } 
 import toast from 'react-hot-toast'
 import axios from 'axios'
 
-import { authApi, socialAccountsApi } from '@/api/client'
+import { authApi, socialAccountsApi, BACKEND_URL } from '@/api/client'
 import { useAuthStore } from '@/store/auth'
 import { smSavePwd, smVerifyPwd } from '@/utils/pwdHash'
 
@@ -475,10 +475,10 @@ export default function EmailOtpAuth({
         await smSavePwd(googleEmail, googleAccPwd)
         localStorage.setItem(`sm_google_has_pwd_${googleEmail}`, '1')
         const h = { Authorization: `Bearer ${googleAuthPending.access}`, 'Content-Type': 'application/json' }
-        await axios.patch('/api/v1/auth/profile/', { password: googleAccPwd }, { headers: h })
-          .catch(() => axios.patch('/api/v1/auth/profile/', { new_password: googleAccPwd }, { headers: h }).catch(() => null))
+        await axios.patch(`${BACKEND_URL}/auth/profile/`, { password: googleAccPwd }, { headers: h })
+          .catch(() => axios.patch(`${BACKEND_URL}/auth/profile/`, { new_password: googleAccPwd }, { headers: h }).catch(() => null))
         if (googleUsername.trim()) {
-          await axios.patch('/api/v1/auth/profile/', { username: googleUsername.trim() }, { headers: h }).catch(() => null)
+          await axios.patch(`${BACKEND_URL}/auth/profile/`, { username: googleUsername.trim() }, { headers: h }).catch(() => null)
         }
         completeAuth(googleAuthPending)
         if (onComplete) onComplete(googleAuthPending)

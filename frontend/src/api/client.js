@@ -1,7 +1,22 @@
 import axios from 'axios'
 
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000/api/v1'
+    }
+  }
+  return 'https://socialmind-cuoi.onrender.com/api/v1'
+}
+
+export const BACKEND_URL = getBaseURL()
+
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: BACKEND_URL,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -27,7 +42,7 @@ api.interceptors.response.use(
       original._retry = true
       try {
         const refresh = localStorage.getItem('refresh_token')
-        const { data } = await axios.post('/api/v1/auth/token/refresh/', { refresh })
+        const { data } = await axios.post(`${BACKEND_URL}/auth/token/refresh/`, { refresh })
         localStorage.setItem('access_token', data.access)
         original.headers.Authorization = `Bearer ${data.access}`
         return api(original)

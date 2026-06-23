@@ -6,7 +6,7 @@ import {
   Maximize2, Minimize2, RefreshCw, AlertTriangle, Layout, Hash
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { schedulingApi, socialAccountsApi, videosApi } from '@/api/client'
+import { schedulingApi, socialAccountsApi, videosApi, BACKEND_URL } from '@/api/client'
 import { useAuthStore } from '@/store/auth'
 import { appendScheduleEntry } from '@/utils/localVideoSchedules'
 import { getLocalVideosKey } from '@/utils/accountStorage'
@@ -1147,7 +1147,7 @@ function VideoMode({ video, filename, autoGenerate = false, onAutoGenerateHandle
         for (const chunk of chunks) {
           let decodedChunk = null
           try {
-            const res = await fetch('/api/v1/videos/groq-tts-proxy/', {
+            const res = await fetch(`${BACKEND_URL}/videos/groq-tts-proxy/`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ input: chunk, groq_key: groqKey || '' }),
