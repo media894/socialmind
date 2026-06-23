@@ -100,13 +100,14 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Read ?google_email=...&action=signup from Google OAuth redirect for new users
+  // URL params from Google OAuth redirects
   const urlParams = new URLSearchParams(location.search)
-  const googleEmailParam = urlParams.get('google_email') || ''
+  const googleEmailParam = urlParams.get('google_email') || ''    // new user signup prefill
+  const googleVerifiedEmail = urlParams.get('google_verified') || '' // existing user — ask password
   const actionParam = urlParams.get('action') || ''
 
   const [showForm, setShowForm] = useState(() => {
-    return !!sessionStorage.getItem('__sm_google_pending__') || actionParam === 'signup' || !!googleEmailParam
+    return actionParam === 'signup' || !!googleEmailParam || !!googleVerifiedEmail
   })
   const [mode, setMode] = useState(() => {
     return (actionParam === 'signup' || googleEmailParam) ? 'register' : 'login'
@@ -503,6 +504,7 @@ export default function LoginPage() {
                 mode={mode}
                 variant="embedded"
                 prefillEmail={googleEmailParam}
+                googleVerifiedEmail={googleVerifiedEmail}
                 onComplete={() => navigate('/dashboard')}
               />
             </div>

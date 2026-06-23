@@ -3,11 +3,9 @@ import { Link } from 'react-router-dom'
 import { CheckCircle2, Chrome, Eye, EyeOff, Loader2, ShieldCheck, Sparkles, X } from 'lucide-react'
 
 import toast from 'react-hot-toast'
-import axios from 'axios'
 
-import { authApi, socialAccountsApi, BACKEND_URL } from '@/api/client'
+import { authApi, socialAccountsApi } from '@/api/client'
 import { useAuthStore } from '@/store/auth'
-import { smSavePwd, smVerifyPwd } from '@/utils/pwdHash'
 
 function isValidEmail(e) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim())
@@ -75,21 +73,24 @@ function PasswordStrength({ password }) {
 export default function EmailOtpAuth({
   mode = 'login',
   prefillEmail = '',
+  googleVerifiedEmail = '',   // set when Google OAuth verified an existing account email
   variant = 'embedded',
   open = true,
   onClose,
   onComplete,
 }) {
   const completeAuth = useAuthStore(state => state.completeAuth)
-  const googlePopupRef = useRef(null)
 
   // ── Navigation ───────────────────────────────────────────────────────────────
   // tab: 'login' | 'signup'
-  // stage: 'main' | 'signup_otp' | 'forgot_send' | 'forgot_otp' | 'forgot_set' | 'google_password'
+  // stage: 'main' | 'signup_otp' | 'forgot_send' | 'forgot_otp' | 'forgot_set' | 'google_verified'
   const [tab, setTab] = useState(mode === 'register' ? 'signup' : 'login')
-  const [stage, setStage] = useState('main')
+  const [stage, setStage] = useState(() => googleVerifiedEmail ? 'google_verified' : 'main')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // ── Google verified password state ────────────────────────────────────────────
+  const [googleVerifyPwd, setGoogleVerifyPwd] = useState('')
 
   // ── Login states ─────────────────────────────────────────────────────────────
   const [loginStep, setLoginStep] = useState('email') // 'email' | 'password'
@@ -120,17 +121,8 @@ export default function EmailOtpAuth({
   const [newPwd, setNewPwd] = useState('')
   const [newPwdConfirm, setNewPwdConfirm] = useState('')
 
-  // ── OAuth password gate (Google / Facebook) ───────────────────────────────────
-  const [oauthProvider, setOauthProvider] = useState('google') // 'google' | 'facebook'
-  const [googleAuthPending, setGoogleAuthPending] = useState(null)
-  const [googleEmail, setGoogleEmail] = useState('')
-  const [googleAccPwd, setGoogleAccPwd] = useState('')
-  const [googleAccPwdConfirm, setGoogleAccPwdConfirm] = useState('')
-  const [googlePasswordMode, setGooglePasswordMode] = useState('set')
-  const [googleUsername, setGoogleUsername] = useState('')
-  const [googleUsernameChecking, setGoogleUsernameChecking] = useState(false)
-  const [googleUsernameError, setGoogleUsernameError] = useState('')
-  const [googleUsernameOk, setGoogleUsernameOk] = useState(false)
+  // ── Google loading state ──────────────────────────────────────────────────────
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   useEffect(() => { if (!open) resetAll() }, [open])
 
@@ -138,36 +130,27 @@ export default function EmailOtpAuth({
   useEffect(() => {
     if (prefillEmail) {
       setSignupEmail(prefillEmail.trim().toLowerCase())
-      setSignupUsername('') // never pre-fill username from email
+      setSignupUsername('')
       setTab('signup')
     }
   }, [prefillEmail])
+
+  // If googleVerifiedEmail is set on mount, go straight to password stage
   useEffect(() => {
-  setTimeout(() => {
-    const pending = sessionStorage.getItem('__sm_google_pending__')
-    if (pending) {
-      sessionStorage.removeItem('__sm_google_pending__')
-      try {
-        const parsed = JSON.parse(pending)
-        openGooglePasswordGate({ 
-          type: 'socialmind-google-auth', 
-          access: parsed.access, 
-          refresh: parsed.refresh,
-          user: parsed.user
-        })
-      } catch {}
+    if (googleVerifiedEmail) {
+      setStage('google_verified')
+      setGoogleVerifyPwd('')
+      setError('')
     }
-  }, 100)
-}, [])
+  }, [googleVerifiedEmail])
 
   const resetAll = () => {
-    if (googlePopupRef.current && !googlePopupRef.current.closed) googlePopupRef.current.close()
-    googlePopupRef.current = null
-    setOauthProvider('google')
     setTab(mode === 'register' ? 'signup' : 'login')
-    setStage('main')
+    setStage(googleVerifiedEmail ? 'google_verified' : 'main')
     setLoading(false)
+    setGoogleLoading(false)
     setError('')
+    setGoogleVerifyPwd('')
     setLoginEmail('')
     setLoginPwd('')
     setLoginEmailCheck(null)
@@ -187,79 +170,47 @@ export default function EmailOtpAuth({
     setForgotOtp('')
     setNewPwd('')
     setNewPwdConfirm('')
-    setGoogleAuthPending(null)
-    setGoogleEmail('')
-    setGoogleAccPwd('')
-    setGoogleAccPwdConfirm('')
-    setGooglePasswordMode('set')
-    setGoogleUsername('')
-    setGoogleUsernameChecking(false)
-    setGoogleUsernameError('')
-    setGoogleUsernameOk(false)
   }
 
   const switchTab = (newTab) => { setTab(newTab); setStage('main'); setError(''); setLoginStep('email'); setLoginEmailCheck(null) }
   const close = () => { if (onClose) onClose() }
 
-  // ── Google OAuth listeners ────────────────────────────────────────────────────
-  const openGooglePasswordGate = (data, provider = 'google') => {
-    if (googlePopupRef.current && !googlePopupRef.current.closed) googlePopupRef.current.close()
-    googlePopupRef.current = null
-    setOauthProvider(provider)
-    const userEmail = data.user?.email || ''
-    const hasPassword = data.user?.has_password === true || localStorage.getItem(`sm_google_has_pwd_${userEmail}`) === '1'
-    setGoogleAuthPending(data)
-    setGoogleEmail(userEmail)
-    setGooglePasswordMode(hasPassword ? 'enter' : 'set')
-    setGoogleAccPwd('')
-    setGoogleAccPwdConfirm('')
-    setGoogleUsername('')
-    setGoogleUsernameOk(false)
-    setError('')
-    setStage('google_password')
-    toast.success(hasPassword
-      ? 'Google verified. Enter your password to continue.'
-      : 'Google verified. Create a password to secure your account.')
-  }
-
-  useEffect(() => {
-    const handle = (event) => {
-      const data = event.data
-      if (!data || data.type !== 'socialmind-google-auth') return
-      if (!data.access || !data.refresh || !data.user) return
-      openGooglePasswordGate(data, 'google')
-    }
-    window.addEventListener('message', handle)
-    return () => window.removeEventListener('message', handle)
-  }, [])
-
-  useEffect(() => {
-    const handle = (event) => {
-      if (event.key !== '__sm_google_auth__') return
-      try {
-        const data = JSON.parse(event.newValue)
-        if (!data || data.type !== 'socialmind-google-auth') return
-        if (!data.access || !data.refresh || !data.user) return
-        localStorage.removeItem(event.key)
-        openGooglePasswordGate(data, 'google')
-      } catch {}
-    }
-    window.addEventListener('storage', handle)
-    return () => window.removeEventListener('storage', handle)
-  }, [])
-
+  // ── Google OAuth — direct redirect (no popup, no password gate) ───────────────
   const openGooglePopup = () => {
+    setGoogleLoading(true)
+    setError('')
     socialAccountsApi.googleAuthStart()
       .then(({ data }) => {
         if (!data?.auth_url) throw new Error('No auth URL')
+        // Redirect the whole page — callback will handle login/signup automatically
         window.location.href = data.auth_url
       })
       .catch(err => {
+        setGoogleLoading(false)
         toast.error(err.response?.data?.error || err.message || 'Failed to start Google sign-in.')
       })
   }
 
-
+  // ── Google verified: submit password to complete auth ─────────────────────────
+  const handleGoogleVerifiedPassword = async (e) => {
+    e.preventDefault()
+    if (!googleVerifyPwd) { setError('Enter your password.'); return }
+    setLoading(true)
+    setError('')
+    try {
+      // Verify password with login API — this gives us fresh tokens
+      const { data } = await authApi.loginWithPassword(googleVerifiedEmail, googleVerifyPwd)
+      // Clean up the temporarily stored Google tokens
+      sessionStorage.removeItem('__sm_google_tokens__')
+      completeAuth(data)
+      if (onComplete) onComplete(data)
+      toast.success('Signed in successfully.')
+      close()
+    } catch (err) {
+      const detail = err.response?.data?.detail || ''
+      setError(detail || 'Wrong password. Please try again.')
+    } finally { setLoading(false) }
+  }
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -364,25 +315,25 @@ export default function EmailOtpAuth({
     if (!termsAccepted) { setError('Please accept the Terms and Privacy Policy to create an account.'); return }
     setLoading(true)
     try {
-  const { data } = await authApi.register({
-    username: signupUsername.trim(),
-    email: signupEmail.trim().toLowerCase(),
-    password: signupPwd,
-    password_confirm: signupPwdConfirm,
-  })
-  completeAuth(data)
-  if (onComplete) onComplete(data)
-  toast.success('Account created! Welcome to SocialMind.')
-  close()
-} catch (err) {
-  const detail = err.response?.data?.detail || err.response?.data?.email?.[0] || err.response?.data?.error || ''
-  if (detail.toLowerCase().includes('already') || detail.toLowerCase().includes('exist')) {
-    setError('Email already registered. Sign in instead.')
-  } else {
-    setError(detail || 'Could not create account. Please try again.')
+      const { data } = await authApi.register({
+        username: signupUsername.trim(),
+        email: signupEmail.trim().toLowerCase(),
+        password: signupPwd,
+        password_confirm: signupPwdConfirm,
+      })
+      completeAuth(data)
+      if (onComplete) onComplete(data)
+      toast.success('Account created! Welcome to SocialMind.')
+      close()
+    } catch (err) {
+      const detail = err.response?.data?.detail || err.response?.data?.email?.[0] || err.response?.data?.error || ''
+      if (detail.toLowerCase().includes('already') || detail.toLowerCase().includes('exist')) {
+        setError('Email already registered. Sign in instead.')
+      } else {
+        setError(detail || 'Could not create account. Please try again.')
+      }
+    } finally { setLoading(false) }
   }
-}
-}
 
   const handleVerifySignupOtp = async (e) => {
     e.preventDefault()
@@ -457,63 +408,6 @@ export default function EmailOtpAuth({
     return pwd.split('').sort(() => Math.random() - 0.5).join('')
   }
 
-  const handleGooglePassword = async (e) => {
-    e.preventDefault()
-    if (loading || !googleAuthPending) return
-    setError('')
-    if (googlePasswordMode === 'set') {
-      if (googleAccPwd.length < 8) { setError('Password must be at least 8 characters.'); return }
-      if (!/[A-Z]/.test(googleAccPwd)) { setError('Add at least one uppercase letter.'); return }
-      if (!/\d/.test(googleAccPwd)) { setError('Add at least one number.'); return }
-      if (googleAccPwd !== googleAccPwdConfirm) { setError('Passwords do not match.'); return }
-    } else {
-      if (!googleAccPwd) { setError('Enter your password.'); return }
-    }
-    setLoading(true)
-    try {
-      if (googlePasswordMode === 'set') {
-        await smSavePwd(googleEmail, googleAccPwd)
-        localStorage.setItem(`sm_google_has_pwd_${googleEmail}`, '1')
-        const h = { Authorization: `Bearer ${googleAuthPending.access}`, 'Content-Type': 'application/json' }
-        await axios.patch(`${BACKEND_URL}/auth/profile/`, { password: googleAccPwd }, { headers: h })
-          .catch(() => axios.patch(`${BACKEND_URL}/auth/profile/`, { new_password: googleAccPwd }, { headers: h }).catch(() => null))
-        if (googleUsername.trim()) {
-          await axios.patch(`${BACKEND_URL}/auth/profile/`, { username: googleUsername.trim() }, { headers: h }).catch(() => null)
-        }
-        completeAuth(googleAuthPending)
-        if (onComplete) onComplete(googleAuthPending)
-        toast.success('Password saved. Welcome to SocialMind!')
-        close()
-      } else {
-        const localOk = await smVerifyPwd(googleEmail, googleAccPwd)
-        if (localOk) {
-          completeAuth(googleAuthPending)
-          if (onComplete) onComplete(googleAuthPending)
-          toast.success('Authentication complete.')
-          close()
-          return
-        }
-        try {
-          const { data: ld } = await authApi.loginWithPassword(googleEmail, googleAccPwd)
-          await smSavePwd(googleEmail, googleAccPwd)
-          completeAuth(ld)
-          if (onComplete) onComplete(ld)
-          toast.success('Authentication complete.')
-          close()
-        } catch {
-          setGooglePasswordMode('set')
-          setGoogleAccPwd('')
-          setGoogleAccPwdConfirm('')
-          setGoogleUsername('')
-          setGoogleUsernameOk(false)
-          setError('Password not recognised. Create a new password below.')
-        }
-      }
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Something went wrong. Please try again.')
-    } finally { setLoading(false) }
-  }
-
   // ── Render ────────────────────────────────────────────────────────────────────
   const wrapperClass = variant === 'modal'
     ? 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm'
@@ -525,13 +419,15 @@ export default function EmailOtpAuth({
   if (variant === 'modal' && !open) return null
 
   const GoogleBtn = () => (
-    <button type="button" onClick={openGooglePopup}
-      className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white text-[#111827] px-4 py-3 font-semibold transition hover:bg-white/95">
-      <Chrome className="h-5 w-5 text-[#4285F4]" />
-      Continue with Google
+    <button type="button" onClick={openGooglePopup} disabled={googleLoading}
+      className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white text-[#111827] px-4 py-3 font-semibold transition hover:bg-white/95 disabled:opacity-70 disabled:cursor-not-allowed">
+      {googleLoading
+        ? <Loader2 className="h-5 w-5 text-[#4285F4] animate-spin" />
+        : <Chrome className="h-5 w-5 text-[#4285F4]" />
+      }
+      {googleLoading ? 'Redirecting to Google…' : 'Continue with Google'}
     </button>
   )
-
 
   const Divider = () => (
     <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-white/25 my-4">
@@ -746,7 +642,7 @@ export default function EmailOtpAuth({
                       <p className="mt-1.5 text-xs text-red-400">Passwords do not match</p>
                     )}
                   </div>
-                                    <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/45">
+                  <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/45">
                     <input
                       type="checkbox"
                       checked={termsAccepted}
@@ -764,7 +660,8 @@ export default function EmailOtpAuth({
                       </Link>
                       .
                     </span>
-                  </label>                  {error && (
+                  </label>
+                  {error && (
                     <p className="text-xs text-red-400">
                       {error}
                       {error.includes('Sign in') && (
@@ -920,122 +817,46 @@ export default function EmailOtpAuth({
             </form>
           )}
 
-          {/* ── Google OAuth → password gate ── */}
-          {stage === 'google_password' && (
-            <>
-              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-brand-400/80 mb-3">
-                <ShieldCheck className="w-4 h-4" />
-                {googlePasswordMode === 'set' ? 'Protect Your Account' : 'Verify Your Identity'}
+          {/* Google verified: ask for SocialMind password */}
+          {stage === 'google_verified' && (
+            <form onSubmit={handleGoogleVerifiedPassword} className="space-y-5">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-brand-400/80 mb-1">
+                <Chrome className="w-4 h-4 text-[#4285F4]" />
+                Google Verified
               </div>
-              <h2 className="text-2xl font-bold text-white mb-1.5">
-                {googlePasswordMode === 'set' ? 'Set your password' : 'Enter your password'}
-              </h2>
-              <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2.5 mb-4">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 bg-[#4285F4]/20">
+              <h2 className="text-2xl font-bold text-white mb-1">Enter your password</h2>
+              <p className="text-white/40 text-sm">
+                Your Google account was verified. Enter your SocialMind password to sign in.
+              </p>
+              <div className="flex items-center gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#4285F4]/20 flex-shrink-0">
                   <Chrome className="w-3.5 h-3.5 text-[#4285F4]" />
                 </div>
-                <span className="text-white/60 text-sm truncate">{googleEmail}</span>
-                <span className="ml-auto text-[10px] text-emerald-400 font-semibold">
-                  Google verified
-                </span>
+                <span className="text-white/80 text-sm truncate flex-1">{googleVerifiedEmail}</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               </div>
-              {googlePasswordMode === 'set' && (
-                <p className="text-white/40 text-sm mb-5">
-                  Create a password so you can also sign in with email. This secures your account.
-                </p>
-              )}
-
-              <form onSubmit={handleGooglePassword} className="space-y-4">
-                {googlePasswordMode === 'set' && (
-                  <div>
-                    <label className="label">Username</label>
-                    <input type="text"
-                      className={`input ${googleUsernameError ? 'border-red-500/50' : googleUsernameOk ? 'border-emerald-500/50' : ''}`}
-                      placeholder="Choose a username" value={googleUsername} autoComplete="new-password"
-                      onChange={e => {
-                        const v = e.target.value.replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 30)
-                        setGoogleUsername(v); setGoogleUsernameOk(false); setGoogleUsernameError('')
-                      }}
-                      onBlur={async () => {
-                        if (!googleUsername.trim() || googleUsername.length < 3) return
-                        setGoogleUsernameChecking(true)
-                        try {
-                          const { data } = await authApi.checkUsername(googleUsername.trim())
-                          if (data.taken === true || data.available === false || data.exists === true) {
-                            setGoogleUsernameError('Username already taken. Try another.')
-                            setGoogleUsernameOk(false)
-                          } else { setGoogleUsernameOk(true); setGoogleUsernameError('') }
-                        } catch { setGoogleUsernameError('') }
-                        finally { setGoogleUsernameChecking(false) }
-                      }}
-                    />
-                    {googleUsernameChecking && <p className="mt-1.5 text-xs text-white/40">Checking…</p>}
-                    {googleUsernameError && <p className="mt-1.5 text-xs text-red-400">{googleUsernameError}</p>}
-                    {googleUsernameOk && <p className="mt-1.5 text-xs text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Username available</p>}
-                    <p className="mt-1 text-[11px] text-white/25">Letters, numbers, _ . - only · Min 3 chars</p>
-                  </div>
-                )}
-
-                <div>
-                  {googlePasswordMode === 'set' ? (
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="label">Password</label>
-                      <button type="button"
-                        onClick={() => { const s = generateStrongPassword(); setGoogleAccPwd(s); setGoogleAccPwdConfirm(s) }}
-                        className="flex items-center gap-1 text-[11px] text-brand-400 hover:text-brand-300 transition">
-                        <Sparkles className="w-3 h-3" /> Suggest strong password
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="label">Password</label>
-                  )}
-                  <PasswordField value={googleAccPwd}
-                    onChange={e => { setGoogleAccPwd(e.target.value); setError('') }}
-                    placeholder={googlePasswordMode === 'set' ? 'Min. 8 characters' : 'Enter your password'}
-                    autoFocus />
-                  {googlePasswordMode === 'set' && <PasswordStrength password={googleAccPwd} />}
-                  {error && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
-                </div>
-
-                {googlePasswordMode === 'set' && (
-                  <div>
-                    <label className="label">Confirm password</label>
-                    <PasswordField value={googleAccPwdConfirm}
-                      onChange={e => { setGoogleAccPwdConfirm(e.target.value); setError('') }}
-                      placeholder="Repeat your password" />
-                    {googleAccPwd && googleAccPwdConfirm && googleAccPwd === googleAccPwdConfirm && (
-                      <p className="mt-1.5 text-xs text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Passwords match
-                      </p>
-                    )}
-                    {googleAccPwd && googleAccPwdConfirm && googleAccPwd !== googleAccPwdConfirm && (
-                      <p className="mt-1.5 text-xs text-red-400">Passwords do not match</p>
-                    )}
-                  </div>
-                )}
-
-                <button type="submit"
-                  disabled={
-                    loading || !googleAccPwd ||
-                    (googlePasswordMode === 'set' && (
-                      googleAccPwd.length < 8 || !/[A-Z]/.test(googleAccPwd) ||
-                      !/\d/.test(googleAccPwd) || googleAccPwd !== googleAccPwdConfirm
-                    ))
-                  }
-                  className="btn-primary w-full h-12 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {loading ? 'Please wait…' : googlePasswordMode === 'set' ? 'Secure & Continue' : 'Verify & Sign in'}
-                </button>
-
-                {googlePasswordMode === 'enter' && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="label">Password</label>
                   <button type="button"
-                    onClick={() => { setForgotEmail(googleEmail); setStage('forgot_send'); setError('') }}
-                    className="w-full text-center text-sm text-brand-400 hover:text-brand-300 transition py-1">
+                    onClick={() => { setForgotEmail(googleVerifiedEmail); setStage('forgot_send'); setError('') }}
+                    className="text-[11px] text-brand-400 hover:text-brand-300 transition">
                     Forgot password?
                   </button>
-                )}
-              </form>
-            </>
+                </div>
+                <PasswordField
+                  value={googleVerifyPwd}
+                  onChange={e => { setGoogleVerifyPwd(e.target.value); setError('') }}
+                  placeholder="Enter your password"
+                  autoFocus
+                />
+                {error && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
+              </div>
+              <button type="submit" disabled={loading || !googleVerifyPwd}
+                className="btn-primary w-full h-12 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in\u2026</> : 'Sign In'}
+              </button>
+            </form>
           )}
 
         </div>
@@ -1043,6 +864,3 @@ export default function EmailOtpAuth({
     </div>
   )
 }
-
-
-
