@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CheckCircle2, Chrome, Eye, EyeOff, Loader2, ShieldCheck, Sparkles, X } from 'lucide-react'
 
 import toast from 'react-hot-toast'
+import { useGoogleLogin } from '@react-oauth/google'
 
 import { authApi, socialAccountsApi } from '@/api/client'
 import { useAuthStore } from '@/store/auth'
@@ -175,21 +176,57 @@ export default function EmailOtpAuth({
   const switchTab = (newTab) => { setTab(newTab); setStage('main'); setError(''); setLoginStep('email'); setLoginEmailCheck(null) }
   const close = () => { if (onClose) onClose() }
 
-  // ── Google OAuth — direct redirect (no popup, no password gate) ───────────────
-  const openGooglePopup = () => {
-    setGoogleLoading(true)
-    setError('')
-    socialAccountsApi.googleAuthStart()
-      .then(({ data }) => {
-        if (!data?.auth_url) throw new Error('No auth URL')
-        // Redirect the whole page — callback will handle login/signup automatically
-        window.location.href = data.auth_url
-      })
-      .catch(err => {
+  // ── Google OAuth — Popup Flow ────────────────────────────────────────────────
+  const openGooglePopup = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setGoogleLoading(true)
+        setError('')
+        // Fetch user profile from Google using the access token
+        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        })
+        const userInfo = await res.json()
+        const email = userInfo.email
+
+        if (!email) {
+          throw new Error('No email returned from Google')
+        }
+
+        // Check if the user exists in the backend
+        const { data } = await authApi.checkEmail(email)
+        
+        if (data.exists) {
+          // User exists, ask for password
+          setLoginEmail(email)
+          setLoginStep('password')
+          setTab('login')
+          setStage('main')
+          toast('Google account found. Please enter your password to sign in.')
+        } else {
+          // New user, switch to signup tab
+          setSignupEmail(email)
+          setSignupUsername('') // User can type their own username
+          setTab('signup')
+          setStage('main')
+          toast('Welcome! Please complete your sign up.')
+        }
+      } catch (err) {
+        setError(err.message || 'Failed to fetch Google profile.')
+      } finally {
         setGoogleLoading(false)
-        toast.error(err.response?.data?.error || err.message || 'Failed to start Google sign-in.')
-      })
-  }
+      }
+    },
+    onError: (error) => {
+      console.error('Google Login Error:', error)
+      toast.error('Google sign-in failed or was cancelled.')
+      setGoogleLoading(false)
+    },
+    onNonOAuthError: (error) => {
+      console.error('Google Non-OAuth Error:', error)
+      setGoogleLoading(false)
+    }
+  })
 
   // ── Google verified: submit password to complete auth ─────────────────────────
   const handleGoogleVerifiedPassword = async (e) => {
@@ -419,7 +456,7 @@ export default function EmailOtpAuth({
   if (variant === 'modal' && !open) return null
 
   const GoogleBtn = () => (
-    <button type="button" onClick={openGooglePopup} disabled={googleLoading}
+    <button type="button" onClick={() => { setGoogleLoading(true); openGooglePopup(); }} disabled={googleLoading}
       className="w-full inline-flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white text-[#111827] px-4 py-3 font-semibold transition hover:bg-white/95 disabled:opacity-70 disabled:cursor-not-allowed">
       {googleLoading
         ? <Loader2 className="h-5 w-5 text-[#4285F4] animate-spin" />

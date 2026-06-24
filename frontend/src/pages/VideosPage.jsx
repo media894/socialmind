@@ -360,7 +360,7 @@ function getDeliveryItems(video) {
       platformIcon: PLATFORM_ICONS[platform] || 'WEB',
       account: post.social_account_username ? `@${post.social_account_username}` : (post.platform_name || platformLabel(platform)),
       status,
-      errorMessage: post.errorMessage || '',
+      errorMessage: post.error_message || post.errorMessage || '',
     })
   }
 
