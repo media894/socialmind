@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 SUBSCRIPTION_ACTIVE_DAYS = 30
-FREE_SCHEDULE_LIMIT = 10
+FREE_SCHEDULE_LIMIT = 20
 ACTIVE_SUBSCRIPTION_VIDEO_QUOTA = 50
 ADMIN_EMAIL = 'demo@socialmind.dev'
 
@@ -132,7 +132,7 @@ def scheduled_posts_this_month(user):
 def schedule_access_denied_response_payload(user, requested_count=1):
     used = scheduled_posts_this_month(user)
     return {
-        'detail': 'Free schedule limit reached. Subscribe to schedule more than 10 videos this month.',
+        'detail': 'Free schedule limit reached. Subscribe to schedule more than 20 videos this month.',
         'plan': getattr(user, 'subscription_plan', 'free'),
         'scheduled_this_month': used,
         'monthly_schedule_quota': FREE_SCHEDULE_LIMIT,
