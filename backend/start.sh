@@ -3,5 +3,5 @@ python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 python manage.py fix_stuck_posts
 
-# Start Gunicorn in the foreground with 1 worker to save RAM and prevent Out-Of-Memory (OOM) crashes on Render Free tier
-gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+# Start Waitress in the foreground as a lightweight single-process WSGI server to prevent Out-Of-Memory (OOM) crashes
+waitress-serve --port=$PORT --threads=4 config.wsgi:application
