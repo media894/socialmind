@@ -868,10 +868,21 @@ class VideoProjectViewSet(viewsets.ModelViewSet):
                 approved_at=timezone.now(),
             )
 
+            # Try to upload to Cloudinary first so we have a permanent public URL (prevents 404s on ephemeral/free tier dynos)
+            cloudinary_url = ''
+            try:
+                if not settings.DEFAULT_FILE_STORAGE.endswith('S3Boto3Storage'):
+                    cloudinary_url = _upload_file_to_cloudinary(file)
+            except Exception as e:
+                logger.warning("Optional Cloudinary upload failed in schedule_local: %s", e)
+
             project.video_file.save(file.name, file, save=False)
             project.file_size = getattr(file, 'size', None)
             project.format = (file.name.rsplit('.', 1)[-1].lower() if '.' in file.name else 'mp4')
-            project.video_url = build_public_media_url(request, project.video_file.url)
+            if cloudinary_url:
+                project.video_url = cloudinary_url
+            else:
+                project.video_url = build_public_media_url(request, project.video_file.url)
             project.save()
 
             created_posts = []
@@ -961,6 +972,41 @@ class VideoProjectViewSet(viewsets.ModelViewSet):
                 for post in created_posts
             ],
         }, status=201)
+
+
+def _upload_file_to_cloudinary(file) -> str:
+    try:
+        import cloudinary
+        import cloudinary.uploader
+        from django.conf import settings
+
+        cloud_name = getattr(settings, 'CLOUDINARY_CLOUD_NAME', '') or os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+        api_key = getattr(settings, 'CLOUDINARY_API_KEY', '') or os.environ.get('CLOUDINARY_API_KEY', '')
+        api_secret = getattr(settings, 'CLOUDINARY_API_SECRET', '') or os.environ.get('CLOUDINARY_API_SECRET', '')
+        cloudinary_url = getattr(settings, 'CLOUDINARY_URL', '') or os.environ.get('CLOUDINARY_URL', '')
+
+        if not (cloud_name and api_key and api_secret) and not cloudinary_url:
+            return ''
+
+        if cloudinary_url:
+            cloudinary.config(url=cloudinary_url)
+        else:
+            cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
+
+        result = cloudinary.uploader.upload(
+            file,
+            resource_type='video',
+            overwrite=True,
+        )
+        url = result.get('secure_url', '')
+        if url:
+            import logging
+            logging.getLogger(__name__).info('Uploaded local video directly to Cloudinary: %s', url)
+        return url
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning('Cloudinary upload failed in views: %s', e)
+        return ''
 
 
 def build_public_media_url(request, relative_url: str) -> str:
