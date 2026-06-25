@@ -184,7 +184,7 @@ export default function UploadVideoPage() {
   const [caption, setCaption] = useState('')
   const [hashtags, setHashtags] = useState('')
   const [selectedAccountIds, setSelectedAccountIds] = useState([])
-  const [scheduledAt, setScheduledAt] = useState(nowPlusMinutes(60))
+  const [scheduledAt, setScheduledAt] = useState(nowPlusMinutes(5))
   const [saving, setSaving] = useState(false)
   const [generatingCopy, setGeneratingCopy] = useState(false)
   const [done, setDone] = useState(false)
