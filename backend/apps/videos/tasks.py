@@ -287,6 +287,19 @@ def check_scheduled_posts():
     from apps.social.models import ScheduledPost
     from apps.users.access_control import expire_user_subscription_if_needed
     now = timezone.now()
+
+    # Clean up posts stuck in publishing for more than 15 minutes
+    stuck_cutoff = now - timezone.timedelta(minutes=15)
+    stuck_posts = ScheduledPost.objects.filter(
+        status='publishing',
+        updated_at__lte=stuck_cutoff
+    )
+    for p in stuck_posts:
+        p.status = 'failed'
+        p.error_message = 'Publishing timed out. The background task worker process restarted or failed to finish.'
+        p.save()
+        _sync_project_post_status(p.project)
+
     for user_id in ScheduledPost.objects.filter(status='scheduled').values_list('user_id', flat=True).distinct():
         try:
             from django.contrib.auth import get_user_model

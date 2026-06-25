@@ -108,7 +108,7 @@ export default function VideoDetailPage() {
       return schedulingApi.create({
         project: id,
         social_account: scheduleForm.social_account,
-        scheduled_at: scheduleForm.scheduled_at,
+        scheduled_at: new Date(scheduleForm.scheduled_at).toISOString(),
         custom_caption: scheduleForm.custom_caption || caption,
         custom_hashtags: hashtags.split(/\s+/).filter(h => h.startsWith('#')),
       })
@@ -480,7 +480,11 @@ export default function VideoDetailPage() {
                   <input type="datetime-local" className="input w-full"
                     value={scheduleForm.scheduled_at}
                     onChange={e => setScheduleForm(f => ({ ...f, scheduled_at: e.target.value }))}
-                    min={new Date().toISOString().slice(0, 16)}
+                    min={(() => {
+                      const d = new Date()
+                      const offset = d.getTimezoneOffset()
+                      return new Date(d.getTime() - offset * 60 * 1000).toISOString().slice(0, 16)
+                    })()}
                   />
                 </div>
                 <div>

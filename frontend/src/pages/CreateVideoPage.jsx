@@ -1818,7 +1818,11 @@ function ScheduleSection({ video }) {
         <div>
           <label className="label">Schedule Date &amp; Time</label>
           <input type="datetime-local" className="input w-full" value={scheduledAt}
-            onChange={e=>setScheduledAt(e.target.value)} min={new Date().toISOString().slice(0,16)}/>
+            onChange={e=>setScheduledAt(e.target.value)} min={(() => {
+              const d = new Date()
+              const offset = d.getTimezoneOffset()
+              return new Date(d.getTime() - offset * 60 * 1000).toISOString().slice(0, 16)
+            })()}/>
         </div>
 
         {/* Title */}

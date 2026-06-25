@@ -2081,7 +2081,11 @@ function SchedulePanel({ video, renderedBlob, onDone, initialPlatforms = [], ren
                   className="input w-full text-xs"
                   value={platformTimes[pId] || ''}
                   onChange={e => setPlatformTime(pId, e.target.value)}
-                  min={new Date().toISOString().slice(0,16)}
+                  min={(() => {
+                    const d = new Date()
+                    const offset = d.getTimezoneOffset()
+                    return new Date(d.getTime() - offset * 60 * 1000).toISOString().slice(0, 16)
+                  })()}
                 />
               </div>
             )
@@ -2091,7 +2095,11 @@ function SchedulePanel({ video, renderedBlob, onDone, initialPlatforms = [], ren
         <div>
           <label className="label text-xs">Date & Time</label>
           <input type="datetime-local" className="input w-full mt-1" value={scheduledAt}
-            onChange={e=>setScheduledAt(e.target.value)} min={new Date().toISOString().slice(0,16)}/>
+            onChange={e=>setScheduledAt(e.target.value)} min={(() => {
+              const d = new Date()
+              const offset = d.getTimezoneOffset()
+              return new Date(d.getTime() - offset * 60 * 1000).toISOString().slice(0, 16)
+            })()}/>
         </div>
       )}
 

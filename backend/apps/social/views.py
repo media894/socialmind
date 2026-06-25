@@ -255,6 +255,27 @@ class ScheduledPostViewSet(viewsets.ModelViewSet):
         if isinstance(direct, str):
             direct = direct.lower() not in {'0', 'false', 'no'}
 
+        # Auto-fail any posts stuck in 'publishing' state for more than 15 minutes
+        stuck_cutoff = timezone.now() - timezone.timedelta(minutes=15)
+        stuck_posts = ScheduledPost.objects.filter(
+            user=request.user,
+            status='publishing',
+            updated_at__lte=stuck_cutoff
+        )
+        for p in stuck_posts:
+            p.status = 'failed'
+            p.error_message = 'Publishing timed out. The background task worker process restarted or failed to finish.'
+            p.save()
+            # Sync project status
+            project = p.project
+            related = ScheduledPost.objects.filter(project=project)
+            if not related.filter(status='publishing').exists():
+                if related.filter(status='failed').exists():
+                    project.status = 'failed'
+                elif related.filter(status='published').exists():
+                    project.status = 'published'
+                project.save(update_fields=['status', 'updated_at'])
+
         due_posts = ScheduledPost.objects.filter(
             user=request.user,
             status='scheduled',

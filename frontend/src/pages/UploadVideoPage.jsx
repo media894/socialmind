@@ -43,7 +43,9 @@ function formatFileSize(bytes) {
 
 function nowPlusMinutes(mins) {
   const d = new Date(Date.now() + mins * 60 * 1000)
-  return d.toISOString().slice(0, 16)
+  const offset = d.getTimezoneOffset()
+  const localDate = new Date(d.getTime() - offset * 60 * 1000)
+  return localDate.toISOString().slice(0, 16)
 }
 
 function titleFromFileName(fileName = '') {
@@ -621,6 +623,11 @@ export default function UploadVideoPage() {
             className="input w-full"
             value={scheduledAt}
             onChange={e => setScheduledAt(e.target.value)}
+            min={(() => {
+              const d = new Date()
+              const offset = d.getTimezoneOffset()
+              return new Date(d.getTime() - offset * 60 * 1000).toISOString().slice(0, 16)
+            })()}
           />
         </div>
 
