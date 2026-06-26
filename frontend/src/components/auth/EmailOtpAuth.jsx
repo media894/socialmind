@@ -593,7 +593,7 @@ export default function EmailOtpAuth({
                       {error && <p className="text-xs text-red-400">{error}</p>}
                       <button type="submit" disabled={loading}
                         className="btn-primary w-full h-12 flex items-center justify-center gap-2 disabled:opacity-60">
-                        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</> : 'Sign In'}
+                        {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Logging in…</> : 'Log In'}
                       </button>
                     </form>
                   )}
@@ -891,7 +891,7 @@ export default function EmailOtpAuth({
               </div>
               <button type="submit" disabled={loading || !googleVerifyPwd}
                 className="btn-primary w-full h-12 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in\u2026</> : 'Sign In'}
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Logging in…</> : 'Log In'}
               </button>
             </form>
           )}
