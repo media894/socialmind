@@ -116,21 +116,15 @@ export const videosApi = {
   list: (params) => api.get('/videos/projects/', { params }),
   get: (id) => api.get(`/videos/projects/${id}/`),
   create: (data) => api.post('/videos/projects/', data),
-  importLocalVideo: (formData) => api.post('/videos/projects/import_local/', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-  scheduleLocalVideo: (formData) => api.post('/videos/projects/schedule_local/', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  importLocalVideo: (formData) => api.post('/videos/projects/import_local/', formData),
+  scheduleLocalVideo: (formData) => api.post('/videos/projects/schedule_local/', formData),
   update: (id, data) => api.patch(`/videos/projects/${id}/`, data),
   delete: (id) => api.delete(`/videos/projects/${id}/`),
   generate: (id) => api.post(`/videos/projects/${id}/generate/`),
   approve: (id, data) => api.post(`/videos/projects/${id}/approve/`, data),
   reject: (id) => api.post(`/videos/projects/${id}/reject/`),
   status: (id) => api.get(`/videos/projects/${id}/status/`),
-  uploadAsset: (id, formData) => api.post(`/videos/projects/${id}/upload_asset/`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  uploadAsset: (id, formData) => api.post(`/videos/projects/${id}/upload_asset/`, formData),
   templates: () => api.get('/videos/templates/'),
   previewVariants: (id) => api.get(`/videos/projects/${id}/preview_variants/`),
   scheduleMulti: (id, data) => api.post(`/videos/projects/${id}/schedule_multi/`, data),
