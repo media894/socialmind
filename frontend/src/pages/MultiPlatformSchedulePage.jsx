@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
-import { useAuthStore } from '@/store/authStore'
+import { useAuthStore } from '@/store/auth'
 import { socialAccountsApi, videosApi } from '@/api/client'
 
 const PLATFORM_ICONS = {
