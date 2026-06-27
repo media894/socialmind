@@ -57,10 +57,17 @@ api.interceptors.response.use(
     }
     // Auto retry on Network Error (e.g. backend cold start on Render free tier)
     if (err.message === 'Network Error' && !original?._noRetry) {
-      if (original.data instanceof FormData) {
-        import('react-hot-toast').then(m => m.default.error('Server is waking up. Please click Schedule again in 30 seconds.', { duration: 8000 }))
-        return Promise.reject(err)
-      }
+   if (original.data instanceof FormData) {
+  const retryCount = parseInt(original.headers['X-Retry-Count'] || '0', 10)
+  if (retryCount < 3) {
+    if (retryCount === 0) {
+      import('react-hot-toast').then(m => m.default('Server is waking up, please wait...', { icon: '⏳', duration: 15000 }))
+    }
+    original.headers['X-Retry-Count'] = (retryCount + 1).toString()
+    return new Promise(resolve => setTimeout(() => resolve(api(original)), 15000))
+  }
+  return Promise.reject(err)
+}
 
       const retryCount = parseInt(original.headers['X-Retry-Count'] || '0', 10)
       if (retryCount < 5) {
