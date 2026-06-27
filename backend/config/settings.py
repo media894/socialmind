@@ -151,18 +151,19 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # CORS
-_cors_origins_env = os.environ.get('CORS_ORIGINS', '')
-if _cors_origins_env:
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins_env.split(',') if o.strip()]
-else:
-    # Allow all origins when CORS_ORIGINS env var is not set.
-    # Safe because JWT auth is in Authorization header, not cookies.
-    CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_HEADERS = [
+CORS_ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get(
+        'CORS_ORIGINS',
+        'http://localhost:3000,https://socialmind-frontend.onrender.com'
+    ).split(',')
+    if o.strip()
+]
+CORS_ALLOW_HEADERS = list([
     'accept', 'accept-encoding', 'authorization', 'content-type',
     'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with',
     'x-retry-count',
-]
+])
 
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com' if os.environ.get('EMAIL_HOST_USER') else '')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
