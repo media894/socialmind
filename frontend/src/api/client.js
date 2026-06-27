@@ -59,6 +59,9 @@ api.interceptors.response.use(
     if (err.message === 'Network Error' && !original?._noRetry) {
       original._retryCount = original._retryCount || 0
       if (original._retryCount < 5) {
+        if (original._retryCount === 0) {
+          import('react-hot-toast').then(m => m.default('Server is waking up, please wait a moment...', { icon: '⏳', duration: 8000 }))
+        }
         original._retryCount++
         console.warn(`Network Error - retrying request (${original._retryCount}/5) in 10s...`)
         return new Promise(resolve => setTimeout(() => resolve(api(original)), 10000))
