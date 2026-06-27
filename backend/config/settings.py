@@ -139,6 +139,7 @@ _use_s3 = bool(os.environ.get('AWS_ACCESS_KEY_ID') and os.environ.get('AWS_STORA
 if _use_s3:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_QUERYSTRING_AUTH = False  # Use public URLs (no signed/expiring query strings)
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
 elif not DEBUG:
     # Production without S3: files are served from MEDIA_ROOT via the app server.
