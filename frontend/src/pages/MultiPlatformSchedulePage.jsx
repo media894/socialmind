@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '@/store/authStore'
 import { socialAccountsApi, videosApi } from '@/api/client'
 
 const PLATFORM_ICONS = {
@@ -57,6 +58,8 @@ export default function MultiPlatformSchedulePage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { user } = useAuthStore()
+  const accountId = user?.id || 'guest'
 
   const [entries, setEntries] = useState([])
 
@@ -67,7 +70,7 @@ export default function MultiPlatformSchedulePage() {
   })
 
   const accountsQuery = useQuery({
-    queryKey: ['social-accounts'],
+    queryKey: ['social-accounts', accountId],
     queryFn: () => socialAccountsApi.list().then(r => r.data),
   })
 

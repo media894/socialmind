@@ -184,13 +184,13 @@ export default function UploadVideoPage() {
   const [caption, setCaption] = useState('')
   const [hashtags, setHashtags] = useState('')
   const [selectedAccountIds, setSelectedAccountIds] = useState([])
-  const [scheduledAt, setScheduledAt] = useState(nowPlusMinutes(5))
+  const [scheduledAt, setScheduledAt] = useState('')
   const [saving, setSaving] = useState(false)
   const [generatingCopy, setGeneratingCopy] = useState(false)
   const [done, setDone] = useState(false)
 
   const { data: socialAccounts = [], isLoading: accountsLoading } = useQuery({
-    queryKey: ['social-accounts'],
+    queryKey: ['social-accounts', accountId],
     queryFn: () => socialAccountsApi.list().then(r => Array.isArray(r.data) ? r.data : (r.data?.results || [])),
     staleTime: 30000,
   })

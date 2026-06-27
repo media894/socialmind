@@ -55,6 +55,16 @@ api.interceptors.response.use(
         window.location.href = '/login'
       }
     }
+    // Auto retry on Network Error (e.g. backend cold start on Render free tier)
+    if (err.message === 'Network Error' && !original?._noRetry) {
+      original._retryCount = original._retryCount || 0
+      if (original._retryCount < 5) {
+        original._retryCount++
+        console.warn(`Network Error - retrying request (${original._retryCount}/5) in 10s...`)
+        return new Promise(resolve => setTimeout(() => resolve(api(original)), 10000))
+      }
+    }
+
     return Promise.reject(err)
   }
 )

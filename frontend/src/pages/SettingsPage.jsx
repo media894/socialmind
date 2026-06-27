@@ -2051,7 +2051,7 @@ function SocialAccountsSection() {
       if (!authUrl) { toast.error('Meta OAuth URL was not returned'); return }
       window.location.href = authUrl
     },
-    onError: (err) => toast.error(err.response?.data?.error || 'Failed to start Meta OAuth'),
+    onError: (err) => toast.error(err.message === 'Network Error' ? 'Server is waking up, please wait a minute.' : (err.response?.data?.error || 'Failed to start Meta OAuth')),
   })
 
   const youtubeConnectMutation = useMutation({
@@ -2061,7 +2061,7 @@ function SocialAccountsSection() {
       if (!authUrl) { toast.error('Google OAuth URL was not returned'); return }
       window.location.href = authUrl
     },
-    onError: () => toast.error('Failed to start Google OAuth'),
+    onError: (err) => toast.error(err.message === 'Network Error' ? 'Server is waking up, please wait a minute.' : 'Failed to start Google OAuth'),
   })
 
 
@@ -2072,7 +2072,7 @@ const linkedinConnectMutation = useMutation({
       if (!authUrl) { toast.error('LinkedIn OAuth URL was not returned'); return }
       window.location.href = authUrl
     },
-    onError: (err) => toast.error(err.response?.data?.error || 'Failed to start LinkedIn OAuth'),
+    onError: (err) => toast.error(err.message === 'Network Error' ? 'Server is waking up, please wait a minute.' : (err.response?.data?.error || 'Failed to start LinkedIn OAuth')),
   })
 
   const twitterConnectMutation = useMutation({
@@ -2082,7 +2082,7 @@ const linkedinConnectMutation = useMutation({
       if (!authUrl) { toast.error('Twitter OAuth URL was not returned'); return }
       window.location.href = authUrl
     },
-    onError: (err) => toast.error(err.response?.data?.error || 'Failed to start Twitter OAuth'),
+    onError: (err) => toast.error(err.message === 'Network Error' ? 'Server is waking up, please wait a minute.' : (err.response?.data?.error || 'Failed to start Twitter OAuth')),
   })
 
   const testPublishMutation = useMutation({
@@ -2092,7 +2092,7 @@ const linkedinConnectMutation = useMutation({
       if (data.ready) toast.success(`${data.platform} account looks ready for publishing`)
       else toast.error(data.warnings.join(' | ') || 'Account is not publish-ready')
     },
-    onError: () => toast.error('Failed to check publish status'),
+    onError: (err) => toast.error(err.message === 'Network Error' ? 'Server is waking up, please wait a minute.' : 'Failed to check publish status'),
   })
 
   const platforms = [
