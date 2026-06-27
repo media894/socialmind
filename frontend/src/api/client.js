@@ -62,13 +62,13 @@ api.interceptors.response.use(
         return Promise.reject(err)
       }
 
-      original._retryCount = original._retryCount || 0
-      if (original._retryCount < 5) {
-        if (original._retryCount === 0) {
+      const retryCount = parseInt(original.headers['X-Retry-Count'] || '0', 10)
+      if (retryCount < 5) {
+        if (retryCount === 0) {
           import('react-hot-toast').then(m => m.default('Server is waking up, please wait a moment...', { icon: '⏳', duration: 8000 }))
         }
-        original._retryCount++
-        console.warn(`Network Error - retrying request (${original._retryCount}/5) in 10s...`)
+        original.headers['X-Retry-Count'] = (retryCount + 1).toString()
+        console.warn(`Network Error - retrying request (${retryCount + 1}/5) in 10s...`)
         return new Promise(resolve => setTimeout(() => resolve(api(original)), 10000))
       }
     }
