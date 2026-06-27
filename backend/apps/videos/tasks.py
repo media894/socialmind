@@ -549,15 +549,34 @@ def _resolve_platform_video_source(project, platform: str, platform_subtype: str
 
     source = _resolve_project_video_source(project)
     local_path = source.get('local_path') or ''
+    public_url = source.get('public_url', '')
+
+    # On Render (ephemeral filesystem), the local file may not exist after a restart.
+    # Download from S3/public URL to /tmp so all platforms can publish.
+    if (not local_path or not os.path.exists(local_path)) and public_url and public_url.startswith('https://'):
+        import tempfile, httpx as _httpx
+        try:
+            logger.info('Local file missing for platform %s, downloading from %s', platform, public_url)
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
+            with _httpx.Client(timeout=120, follow_redirects=True) as client:
+                r = client.get(public_url)
+                r.raise_for_status()
+                tmp.write(r.content)
+            local_path = tmp.name
+            logger.info('Downloaded video to %s for publishing', local_path)
+        except Exception as dl_exc:
+            logger.warning('Could not download video from %s: %s', public_url, dl_exc)
+            # For instagram/facebook we can pass the URL directly without a local file
+            if platform in {'instagram', 'facebook'}:
+                return {
+                    'local_path': '',
+                    'public_url': public_url,
+                    'ratio': '',
+                    'resolution': '',
+                }
+            raise Exception(f'Could not find the source video file for publishing. Download failed: {dl_exc}')
+
     if not local_path or not os.path.exists(local_path):
-        pub = source.get('public_url', '')
-        if pub and pub.startswith('https://') and platform in {'instagram', 'facebook'}:
-            return {
-                'local_path': '',
-                'public_url': pub,
-                'ratio': '',
-                'resolution': '',
-            }
         raise Exception('Could not find the source video file for publishing.')
 
     resolved_platform = platform

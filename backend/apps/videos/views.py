@@ -607,7 +607,7 @@ class VideoProjectViewSet(viewsets.ModelViewSet):
         from apps.users.models import SocialAccount
         from apps.social.models import ScheduledPost
         from apps.social.views import ScheduledPostViewSet
-
+        
         project = self.get_object()
         if project.status not in ('approved', 'review', 'scheduled', 'published'):
             return Response(
