@@ -78,6 +78,14 @@ def _platform_key(platform: str) -> str:
 
 
 def _ffmpeg_path() -> str:
+    import urllib.request
+    import tarfile
+    from django.conf import settings
+
+    local_binary = os.path.join(settings.BASE_DIR, 'ffmpeg_binary')
+    if os.path.exists(local_binary):
+        return local_binary
+
     path = shutil.which('ffmpeg')
     if not path:
         try:
@@ -85,6 +93,27 @@ def _ffmpeg_path() -> str:
             path = imageio_ffmpeg.get_ffmpeg_exe()
         except ImportError:
             pass
+
+    # If ffmpeg is not found or it throws permission errors, let's download the static build
+    if not path or not os.access(path, os.X_OK):
+        print("Downloading static ffmpeg binary...")
+        try:
+            tar_path = os.path.join(settings.BASE_DIR, 'ffmpeg.tar.xz')
+            urllib.request.urlretrieve('https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz', tar_path)
+            with tarfile.open(tar_path, 'r:xz') as tar:
+                for member in tar.getmembers():
+                    if member.name.endswith('/ffmpeg'):
+                        member.name = 'ffmpeg_binary'
+                        tar.extract(member, path=settings.BASE_DIR)
+                        break
+            os.chmod(local_binary, 0o755)
+            if os.path.exists(tar_path):
+                os.remove(tar_path)
+            return local_binary
+        except Exception as e:
+            print(f"Failed to download ffmpeg: {e}")
+            raise RuntimeError(f"ffmpeg is missing and auto-download failed: {e}")
+
     if not path:
         raise RuntimeError('ffmpeg is required to render platform-specific video variants.')
     return path
