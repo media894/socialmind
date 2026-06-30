@@ -1304,6 +1304,9 @@ function ProfileSection() {
         </div>
       )}
 
+      {/* ── API Keys ── */}
+      <APIKeysSection />
+
       {/* ── Save button ── */}
       <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.045] backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.20)]">
         <div className="px-6 pt-5 pb-4 border-b border-red-500/15">
