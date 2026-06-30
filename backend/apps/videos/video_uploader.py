@@ -80,43 +80,58 @@ def _platform_key(platform: str) -> str:
 def _ffmpeg_path() -> str:
     import urllib.request
     import tarfile
+    import subprocess
     from django.conf import settings
 
     local_binary = os.path.join(settings.BASE_DIR, 'ffmpeg_binary')
-    if os.path.exists(local_binary):
+    
+    def check_binary(binary_path):
+        if not binary_path or not os.path.exists(binary_path):
+            return False
+        if not os.access(binary_path, os.X_OK):
+            return False
+        try:
+            # Test if it can actually execute and find its libraries
+            subprocess.run([binary_path, '-version'], capture_output=True, check=True)
+            return True
+        except Exception:
+            return False
+
+    if check_binary(local_binary):
         return local_binary
 
     path = shutil.which('ffmpeg')
-    if not path:
-        try:
-            import imageio_ffmpeg
-            path = imageio_ffmpeg.get_ffmpeg_exe()
-        except ImportError:
-            pass
+    if check_binary(path):
+        return path
 
-    # If ffmpeg is not found or it throws permission errors, let's download the static build
-    if not path or not os.access(path, os.X_OK):
-        print("Downloading static ffmpeg binary...")
-        try:
-            tar_path = os.path.join(settings.BASE_DIR, 'ffmpeg.tar.xz')
-            urllib.request.urlretrieve('https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz', tar_path)
-            with tarfile.open(tar_path, 'r:xz') as tar:
-                for member in tar.getmembers():
-                    if member.name.endswith('/ffmpeg'):
-                        member.name = 'ffmpeg_binary'
-                        tar.extract(member, path=settings.BASE_DIR)
-                        break
-            os.chmod(local_binary, 0o755)
-            if os.path.exists(tar_path):
-                os.remove(tar_path)
+    try:
+        import imageio_ffmpeg
+        path = imageio_ffmpeg.get_ffmpeg_exe()
+        if check_binary(path):
+            return path
+    except ImportError:
+        pass
+
+    print("Downloading static ffmpeg binary...")
+    try:
+        tar_path = os.path.join(settings.BASE_DIR, 'ffmpeg.tar.xz')
+        urllib.request.urlretrieve('https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz', tar_path)
+        with tarfile.open(tar_path, 'r:xz') as tar:
+            for member in tar.getmembers():
+                if member.name.endswith('/ffmpeg'):
+                    member.name = 'ffmpeg_binary'
+                    tar.extract(member, path=settings.BASE_DIR)
+                    break
+        os.chmod(local_binary, 0o755)
+        if os.path.exists(tar_path):
+            os.remove(tar_path)
+        if check_binary(local_binary):
             return local_binary
-        except Exception as e:
-            print(f"Failed to download ffmpeg: {e}")
-            raise RuntimeError(f"ffmpeg is missing and auto-download failed: {e}")
+    except Exception as e:
+        print(f"Failed to download ffmpeg: {e}")
+        raise RuntimeError(f"ffmpeg is missing and auto-download failed: {e}")
 
-    if not path:
-        raise RuntimeError('ffmpeg is required to render platform-specific video variants.')
-    return path
+    raise RuntimeError('ffmpeg is required to render platform-specific video variants, and no working binary was found.')
 
 
 def _ffprobe_path() -> str:

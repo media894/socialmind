@@ -501,16 +501,9 @@ def _render_platform_variant(project, platform: str, source_path: str) -> dict:
     variant_dir = os.path.join(tempfile.gettempdir(), 'socialmind', 'platform_variants', str(project.id))
     try:
         variant_path = render_platform_video(source_path, platform, output_dir=variant_dir)
-    except (RuntimeError, FileNotFoundError, OSError) as exc:
-        # ffmpeg not installed — skip re-encoding and use the source file directly
-        if isinstance(exc, FileNotFoundError) or 'is required to render' in str(exc):
-            logger.warning(
-                "ffmpeg unavailable for platform %s, using source file as-is: %s",
-                platform, exc,
-            )
-            variant_path = source_path
-        else:
-            raise
+    except Exception as exc:
+        logger.error("ffmpeg failed for platform %s: %s", platform, exc)
+        raise
     return {
         'path': variant_path,
         'ratio': preset.get('ratio', ''),
