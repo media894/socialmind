@@ -80,6 +80,12 @@ def _platform_key(platform: str) -> str:
 def _ffmpeg_path() -> str:
     path = shutil.which('ffmpeg')
     if not path:
+        try:
+            import imageio_ffmpeg
+            path = imageio_ffmpeg.get_ffmpeg_exe()
+        except ImportError:
+            pass
+    if not path:
         raise RuntimeError('ffmpeg is required to render platform-specific video variants.')
     return path
 
