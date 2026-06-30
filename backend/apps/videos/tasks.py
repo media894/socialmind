@@ -456,7 +456,7 @@ def _upload_to_storage(local_path: str, s3_key: str) -> str:
                 region_name=settings.AWS_S3_REGION_NAME,
             )
             s3.upload_file(local_path, settings.AWS_STORAGE_BUCKET_NAME, s3_key,
-                           ExtraArgs={'ACL': 'public-read', 'ContentType': 'video/mp4'})
+                           ExtraArgs={'ContentType': 'video/mp4'})
             url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
             logger.info('S3 upload succeeded: %s', url)
             return url
