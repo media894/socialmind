@@ -5,7 +5,7 @@ import {
   Loader2, Maximize2, Minimize2, AlertTriangle, ShieldCheck, Send, Save, RefreshCw, Play
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/api/client'
+import { authApi, apiKeysApi } from '@/api/client'
 import { appendScheduleEntry } from '@/utils/localVideoSchedules'
 import { buildSocialPostKit } from '@/utils/socialPostKit'
 import { useAuthStore } from '@/store/auth'
@@ -329,8 +329,18 @@ export default function CreateVideoPage() {
 function AIVideoGenerator({ onVideoReady }) {
   const user = useAuthStore(state => state.user)
   const updateUser = useAuthStore(state => state.updateUser)
-  const [groqKey,      setGroqKey]      = useState('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')
-  const [pexelsKey,    setPexelsKey]    = useState('cimbU9JhWfQiL6Pwi9oO1QpFXwN9tCtA93u1G1IDpDI3eRWQbCJaz26j')
+  const [groqKey,      setGroqKey]      = useState('')
+  const [pexelsKey,    setPexelsKey]    = useState('')
+
+  useEffect(() => {
+    apiKeysApi.list().then(res => {
+      const keys = Array.isArray(res.data) ? res.data : (res.data?.results || [])
+      const groq = keys.find(k => k.service === 'groq')
+      const pexels = keys.find(k => k.service === 'pexels')
+      if (groq?.api_key) setGroqKey(groq.api_key)
+      if (pexels?.api_key) setPexelsKey(pexels.api_key)
+    }).catch(err => console.error('Failed to load API keys', err))
+  }, [])
   const [usePrompt,    setUsePrompt]    = useState(false)
   const [customPrompt, setCustomPrompt] = useState('')
   const [companyName,  setCompanyName]  = useState('')
