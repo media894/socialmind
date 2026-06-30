@@ -329,25 +329,8 @@ export default function CreateVideoPage() {
 function AIVideoGenerator({ onVideoReady }) {
   const user = useAuthStore(state => state.user)
   const updateUser = useAuthStore(state => state.updateUser)
-  const [groqKey,      setGroqKey]      = useState('')
-  const [pexelsKey,    setPexelsKey]    = useState('')
-
-  useEffect(() => {
-    apiKeysApi.list().then(res => {
-      const keys = Array.isArray(res.data) ? res.data : (res.data?.results || [])
-      const groq = keys.find(k => k.service === 'groq')
-      const pexels = keys.find(k => k.service === 'pexels')
-      
-      // Use DB keys if available, otherwise use fallback keys
-      setGroqKey(groq?.api_key || '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')
-      setPexelsKey(pexels?.api_key || 'cimbU9JhWfQiL6Pwi9oO1QpFXwN9tCtA93u1G1IDpDI3eRWQbCJaz26j')
-    }).catch(err => {
-      console.error('Failed to load API keys', err)
-      // Fallback in case of API failure
-      setGroqKey('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')
-      setPexelsKey('cimbU9JhWfQiL6Pwi9oO1QpFXwN9tCtA93u1G1IDpDI3eRWQbCJaz26j')
-    })
-  }, [])
+  const [groqKey,      setGroqKey]      = useState('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')
+  const [pexelsKey,    setPexelsKey]    = useState('cimbU9JhWfQiL6Pwi9oO1QpFXwN9tCtA93u1G1IDpDI3eRWQbCJaz26j')
   const [usePrompt,    setUsePrompt]    = useState(false)
   const [customPrompt, setCustomPrompt] = useState('')
   const [companyName,  setCompanyName]  = useState('')
