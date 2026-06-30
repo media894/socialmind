@@ -2129,7 +2129,7 @@ function SchedulePanel({ video, renderedBlob, onDone, initialPlatforms = [], ren
       </button>
 
       <p className="text-white/30 text-xs leading-relaxed">
-        This creates real backend scheduled posts for your connected accounts. Instagram and Facebook still need the uploaded video to be publicly reachable, so use <code className="text-white/50">PUBLIC_APP_URL</code> or S3 in deployment.
+
       </p>
     </div>
   )
