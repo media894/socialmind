@@ -457,8 +457,12 @@ def _upload_to_storage(local_path: str, s3_key: str) -> str:
             )
             s3.upload_file(local_path, settings.AWS_STORAGE_BUCKET_NAME, s3_key,
                            ExtraArgs={'ContentType': 'video/mp4'})
-            url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
-            logger.info('S3 upload succeeded: %s', url)
+            url = s3.generate_presigned_url(
+                'get_object',
+                Params={'Bucket': settings.AWS_STORAGE_BUCKET_NAME, 'Key': s3_key},
+                ExpiresIn=604800
+            )
+            logger.info('S3 upload succeeded with presigned URL')
             return url
     except Exception as e:
         logger.warning(f"S3 upload failed, trying Cloudinary: {e}")
