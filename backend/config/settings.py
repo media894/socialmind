@@ -115,7 +115,7 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'socialmind-media')
 AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
 AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = 'public-read'
+AWS_DEFAULT_ACL = None
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
 # PUBLIC_APP_URL must be set to your publicly reachable domain (e.g. https://yourdomain.com)
 # so that Facebook/Instagram can fetch the video file when publishing.
@@ -138,7 +138,7 @@ if not DEBUG and not os.environ.get('PUBLIC_APP_URL'):
 _use_s3 = bool(os.environ.get('AWS_ACCESS_KEY_ID') and os.environ.get('AWS_STORAGE_BUCKET_NAME'))
 if _use_s3:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    AWS_DEFAULT_ACL = 'public-read'
+    AWS_DEFAULT_ACL = None
     AWS_S3_QUERYSTRING_AUTH = False  # Use public URLs (no signed/expiring query strings)
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
 elif not DEBUG:
