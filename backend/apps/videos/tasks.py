@@ -445,7 +445,6 @@ def _upload_to_storage(local_path: str, s3_key: str) -> str:
     if not P(local_path).exists():
         return ''
 
-    # ── 1. Try S3 ────────────────────────────────────────────────────
     try:
         import boto3
         from django.conf import settings
@@ -461,32 +460,9 @@ def _upload_to_storage(local_path: str, s3_key: str) -> str:
             logger.info('S3 upload succeeded: %s', url)
             return url
     except Exception as e:
-        logger.warning(f"S3 upload failed, trying Cloudinary: {e}")
-
-    # ── 2. Try Cloudinary (free public CDN, no server-exposure needed) ─
-    cloudinary_url = _upload_to_cloudinary(local_path, s3_key)
-    if cloudinary_url:
-        return cloudinary_url
-
-    # ── 3. Fall back to local media (only works if PUBLIC_APP_URL is a real public HTTPS domain) ─
-    import shutil
-    from django.conf import settings
-    dest = P(settings.MEDIA_ROOT) / s3_key
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(local_path, str(dest))
-    local_relative_url = f"{settings.MEDIA_URL}{s3_key}"
-
-    # Warn loudly if PUBLIC_APP_URL is not set or is localhost — Meta cannot fetch it
-    public_base = getattr(settings, 'PUBLIC_APP_URL', '').rstrip('/')
-    if not public_base or 'localhost' in public_base or '127.0.0.1' in public_base:
-        logger.error(
-            'CRITICAL: Video saved locally but PUBLIC_APP_URL is "%s". '
-            'Meta (Instagram/Facebook) cannot fetch videos from localhost. '
-            'Set PUBLIC_APP_URL to your real public domain, or configure S3/Cloudinary. '
-            'Post will fail with "Unable to fetch video file from URL".',
-            public_base,
-        )
-    return local_relative_url
+        raise Exception(f"S3 upload failed during processing: {e}")
+    
+    raise Exception("AWS_ACCESS_KEY_ID is missing. Cannot upload video to S3.")
 
 
 def _ensure_public_url(url: str) -> str:
