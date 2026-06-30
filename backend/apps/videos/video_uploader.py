@@ -194,7 +194,9 @@ def render_platform_video(input_path: str, platform: str, output_dir: str | None
         '-crf', '22',
         '-preset', 'veryfast',
         '-c:a', 'aac',
-        '-b:a', '192k',
+        '-b:a', '128k',
+        '-threads', '1',
+        '-max_muxing_queue_size', '1024',
         '-movflags', '+faststart',
         str(out_path),
     ]
