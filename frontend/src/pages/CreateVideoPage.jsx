@@ -329,7 +329,7 @@ export default function CreateVideoPage() {
 function AIVideoGenerator({ onVideoReady }) {
   const user = useAuthStore(state => state.user)
   const updateUser = useAuthStore(state => state.updateUser)
-  const [groqKey,      setGroqKey]      = useState('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')
+  const [groqKey,      setGroqKey]      = useState('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')
   const [pexelsKey,    setPexelsKey]    = useState('cimbU9JhWfQiL6Pwi9oO1QpFXwN9tCtA93u1G1IDpDI3eRWQbCJaz26j')
   const [usePrompt,    setUsePrompt]    = useState(false)
   const [customPrompt, setCustomPrompt] = useState('')
