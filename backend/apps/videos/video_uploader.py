@@ -156,7 +156,7 @@ def _probe_video_dimensions(input_path: str) -> tuple[Optional[int], Optional[in
         '-of', 'json',
         input_path,
     ]
-    result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+    result = subprocess.run(command, capture_output=True, text=True, timeout=120)
     if result.returncode != 0:
         return None, None
     try:
