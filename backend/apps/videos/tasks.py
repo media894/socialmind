@@ -593,6 +593,18 @@ def _resolve_project_video_source(project) -> dict:
     import httpx
 
     public_url = (project.video_url or '').strip()
+
+    # Sanitize corrupted public_urls (where PUBLIC_APP_URL was wrongly prepended to an S3/Cloudinary URL)
+    public_base = getattr(settings, 'PUBLIC_APP_URL', '').rstrip('/')
+    if public_base and public_url.startswith(public_base):
+        remainder = public_url[len(public_base):]
+        # If the remainder starts with http:// or https:// (or /http...), it was double-prepended
+        if 'http://' in remainder or 'https://' in remainder:
+            if 'https://' in remainder:
+                public_url = 'https://' + remainder.split('https://', 1)[1]
+            elif 'http://' in remainder:
+                public_url = 'http://' + remainder.split('http://', 1)[1]
+
     local_path = ''
 
     if getattr(project, 'video_file', None):

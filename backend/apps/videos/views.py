@@ -1012,9 +1012,12 @@ def _upload_file_to_cloudinary(file) -> str:
 def build_public_media_url(request, relative_url: str) -> str:
     if not relative_url:
         return ''
+    if relative_url.startswith(('http://', 'https://')):
+        return relative_url
+        
     base_url = getattr(settings, 'PUBLIC_APP_URL', '')
-    if base_url:
-        return f"{base_url}{relative_url}"
+    if base_url and 'localhost' not in base_url and '127.0.0.1' not in base_url:
+        return f"{base_url.rstrip('/')}/{relative_url.lstrip('/')}"
     return request.build_absolute_uri(relative_url)
 
 
