@@ -53,8 +53,8 @@ services:
       - AWS_SECRET_ACCESS_KEY=
       - AWS_STORAGE_BUCKET_NAME=socialmind-media
       - PUBLIC_APP_URL=${PUBLIC_APP_URL}
-      - GOOGLE_CLIENT_ID=622806271516-586b8sjvsqjnpoar87bitmrg2ig7a50a.apps.googleusercontent.com
-      - GOOGLE_CLIENT_SECRET=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
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     volumes:
       - media_files:/app/media
     ports:
