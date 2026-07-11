@@ -48,7 +48,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY}
       - ENCRYPTION_KEY=QQrg9aR0tX2Z4BKyp8dWyqbCgzCHJO7riBxYWYEK_1I=
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:80
+      - CORS_ORIGINS=${CORS_ORIGINS}
       - AWS_ACCESS_KEY_ID=
       - AWS_SECRET_ACCESS_KEY=
       - AWS_STORAGE_BUCKET_NAME=socialmind-media
