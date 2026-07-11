@@ -10,7 +10,7 @@ const getBaseURL = () => {
       return 'http://localhost:8000/api/v1'
     }
   }
-  return 'https://socialmind-cuoi.onrender.com/api/v1'
+  return '/api/v1'
 }
 
 export const BACKEND_URL = getBaseURL()
