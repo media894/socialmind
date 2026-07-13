@@ -107,7 +107,7 @@ export default function LoginPage() {
   const actionParam = urlParams.get('action') || ''
 
   const [showForm, setShowForm] = useState(() => {
-    return actionParam === 'signup' || !!googleEmailParam || !!googleVerifiedEmail
+    return actionParam === 'signup' || actionParam === 'login' || !!googleEmailParam || !!googleVerifiedEmail
   })
   const [mode, setMode] = useState(() => {
     return (actionParam === 'signup' || googleEmailParam) ? 'register' : 'login'
