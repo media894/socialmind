@@ -724,6 +724,16 @@ export default function AppLayout() {
                       setAccountOpen(false)
                       handleLogout()
                     }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/70 hover:bg-white/5 hover:text-white transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add account
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAccountOpen(false)
+                      handleLogout()
+                    }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-300 hover:bg-red-500/10 hover:text-red-200 transition"
                   >
                     <LogOut className="w-4 h-4" />
