@@ -28,8 +28,10 @@ export default function PayPalCheckoutModal({ open, plan, onClose, onSuccess, on
 
   const planId = useMemo(() => {
     if (!plan?.key) return ''
-    return config?.plan_ids?.[plan.key] || ''
-  }, [config, plan?.key])
+    const isAnnual = plan.billing === 'annual'
+    const key = isAnnual ? `${plan.key}_annual` : `${plan.key}_monthly`
+    return config?.plan_ids?.[key] || config?.plan_ids?.[plan.key] || ''
+  }, [config, plan])
 
   const handleApprove = useCallback(async (subscriptionId) => {
     if (!plan?.key) return
@@ -37,7 +39,7 @@ export default function PayPalCheckoutModal({ open, plan, onClose, onSuccess, on
     setError('')
     try {
       const { data } = await billingApi.approvePayPalSubscription({
-        plan_key: plan.key,
+        plan_key: plan.billing === 'annual' ? `${plan.key}_annual` : `${plan.key}_monthly`,
         subscription_id: subscriptionId,
       })
       if (data?.user) updateUser(data.user)

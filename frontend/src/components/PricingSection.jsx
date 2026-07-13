@@ -58,7 +58,7 @@ function fmt(n) {
   return '$' + n.toLocaleString('en-US')
 }
 
-export default function PricingSection({ onClose, onStartTrial, onContactSales, onViewDemo }) {
+export default function PricingSection({ onClose, onStartTrial, onContactSales, onViewDemo, onSelectPlan }) {
   const [billing, setBilling] = useState('monthly')
   const [showDiff, setShowDiff] = useState(false)
   const [dismissed, setDismissed] = useState(false)
@@ -107,8 +107,24 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
   }, [])
 
   function handleAction(action) {
-    if (action === 'trial') onStartTrial?.(billing)
-    if (action === 'sales') onContactSales?.(billing)
+    if (onSelectPlan) {
+      const planKey = action === 'trial' ? 'pro' : 'enterprise'
+      const planData = PLANS[planKey]
+      const price = billing === 'annual' ? planData.annual : planData.monthly
+      onSelectPlan({
+        key: planKey,
+        name: planData.name,
+        eyebrow: planData.tag,
+        monthlyPrice: price,
+        billing: billing,
+        quota: planKey === 'pro' ? '50 videos / month' : 'Unlimited videos',
+        note: planKey === 'pro' ? '1 SocialMind account · AI-powered' : 'Up to 5 team members · SSO included',
+        features: planData.features,
+      })
+    } else {
+      if (action === 'trial') onStartTrial?.(billing)
+      if (action === 'sales') onContactSales?.(billing)
+    }
   }
 
   const proFeatures = PLANS.pro.features

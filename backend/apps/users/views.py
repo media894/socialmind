@@ -49,14 +49,36 @@ class PayPalConfigurationError(Exception):
 
 
 def _paypal_plan_settings():
+    pro_monthly_id = getattr(settings, 'PAYPAL_PRO_PLAN_ID', '')
+    ent_monthly_id = getattr(settings, 'PAYPAL_ENTERPRISE_PLAN_ID', '')
     return {
         'pro': {
-            'paypal_plan_id': getattr(settings, 'PAYPAL_PRO_PLAN_ID', ''),
+            'paypal_plan_id': pro_monthly_id,
+            'subscription_plan': 'pro',
+            'monthly_video_quota': 50,
+        },
+        'pro_monthly': {
+            'paypal_plan_id': pro_monthly_id,
+            'subscription_plan': 'pro',
+            'monthly_video_quota': 50,
+        },
+        'pro_annual': {
+            'paypal_plan_id': getattr(settings, 'PAYPAL_PRO_ANNUAL_PLAN_ID', ''),
             'subscription_plan': 'pro',
             'monthly_video_quota': 50,
         },
         'enterprise': {
-            'paypal_plan_id': getattr(settings, 'PAYPAL_ENTERPRISE_PLAN_ID', ''),
+            'paypal_plan_id': ent_monthly_id,
+            'subscription_plan': 'enterprise',
+            'monthly_video_quota': ENTERPRISE_MONTHLY_VIDEO_QUOTA,
+        },
+        'enterprise_monthly': {
+            'paypal_plan_id': ent_monthly_id,
+            'subscription_plan': 'enterprise',
+            'monthly_video_quota': ENTERPRISE_MONTHLY_VIDEO_QUOTA,
+        },
+        'enterprise_annual': {
+            'paypal_plan_id': getattr(settings, 'PAYPAL_ENTERPRISE_ANNUAL_PLAN_ID', ''),
             'subscription_plan': 'enterprise',
             'monthly_video_quota': ENTERPRISE_MONTHLY_VIDEO_QUOTA,
         },
@@ -936,7 +958,11 @@ class PayPalConfigView(APIView):
             'client_id': getattr(settings, 'PAYPAL_CLIENT_ID', ''),
             'plan_ids': {
                 'pro': plans['pro']['paypal_plan_id'],
+                'pro_monthly': plans['pro_monthly']['paypal_plan_id'],
+                'pro_annual': plans['pro_annual']['paypal_plan_id'],
                 'enterprise': plans['enterprise']['paypal_plan_id'],
+                'enterprise_monthly': plans['enterprise_monthly']['paypal_plan_id'],
+                'enterprise_annual': plans['enterprise_annual']['paypal_plan_id'],
             },
             'ready': bool(getattr(settings, 'PAYPAL_CLIENT_ID', '')),
         })

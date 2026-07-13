@@ -185,7 +185,9 @@ PAYPAL_ENVIRONMENT = os.environ.get('PAYPAL_ENVIRONMENT', 'sandbox').strip().low
 PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID', '')
 PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET', '')
 PAYPAL_PRO_PLAN_ID = os.environ.get('PAYPAL_PRO_PLAN_ID', '')
+PAYPAL_PRO_ANNUAL_PLAN_ID = os.environ.get('PAYPAL_PRO_ANNUAL_PLAN_ID', '')
 PAYPAL_ENTERPRISE_PLAN_ID = os.environ.get('PAYPAL_ENTERPRISE_PLAN_ID', '')
+PAYPAL_ENTERPRISE_ANNUAL_PLAN_ID = os.environ.get('PAYPAL_ENTERPRISE_ANNUAL_PLAN_ID', '')
 PAYPAL_WEBHOOK_ID = os.environ.get("PAYPAL_WEBHOOK_ID", "")
 PAYPAL_API_BASE_URL = (
     'https://api-m.paypal.com'
