@@ -201,6 +201,11 @@ export default function SchedulePage() {
                         {post.views_count > 0 && <span>👁 {post.views_count}</span>}
                       </div>
                     )}
+                    {post.status === 'failed' && (post.error_message || post.errorMessage) && (
+                      <div className="text-xs text-red-400 mt-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 font-medium">
+                        ⚠️ {post.error_message || post.errorMessage}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-2 flex-shrink-0">

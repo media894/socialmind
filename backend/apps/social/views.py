@@ -225,6 +225,8 @@ class ScheduledPostViewSet(viewsets.ModelViewSet):
             return Response({'error': 'This scheduled post is blocked until the account has an active quota.'}, status=403)
         if post.status == 'published':
             return Response({'error': 'Already published'}, status=400)
+        if post.status == 'publishing':
+            return Response({'error': 'This post is already in the process of publishing. Please wait.'}, status=400)
         publishable_project_statuses = ['approved', 'scheduled', 'failed', 'published']
         if post.project.status not in publishable_project_statuses:
             return Response({'error': 'Project must be approved before publishing'}, status=400)

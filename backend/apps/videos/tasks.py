@@ -186,7 +186,7 @@ def generate_video_task(self, project_id: str, api_key_config_id: int):
         raise self.retry(exc=e)
 
 
-@shared_task(bind=True, max_retries=3)
+@shared_task(bind=True)
 def publish_post_task(self, scheduled_post_id: str):
     return execute_publish_post(scheduled_post_id, retry_task=self)
 
@@ -201,6 +201,19 @@ def execute_publish_post(scheduled_post_id: str, retry_task=None):
         logger.error(f"Post {scheduled_post_id} not found: {e}")
         return
 
+    if post.status == 'published':
+        logger.info("Post %s is already published. Skipping.", scheduled_post_id)
+        return {'success': True, 'already_published': True}
+
+    if post.status == 'cancelled':
+        logger.info("Post %s was cancelled. Skipping.", scheduled_post_id)
+        return {'success': False, 'cancelled': True}
+
+    is_retry = retry_task is not None and getattr(retry_task.request, 'retries', 0) > 0
+    if post.status == 'publishing' and not is_retry:
+        logger.info("Post %s is currently being published by another worker. Skipping.", scheduled_post_id)
+        return {'success': False, 'already_publishing': True}
+
     from apps.users.access_control import user_has_video_access, block_user_scheduled_content
     if post.status == 'blocked' or not user_has_video_access(post.user):
         block_user_scheduled_content(post.user, reason='publish_access_blocked')
@@ -209,7 +222,7 @@ def execute_publish_post(scheduled_post_id: str, retry_task=None):
         return {'success': False, 'blocked': True}
 
     post.status = 'publishing'
-    post.save()
+    post.save(update_fields=['status', 'updated_at'])
 
     try:
         publisher = get_publisher(post.social_account.platform)
@@ -277,8 +290,6 @@ def execute_publish_post(scheduled_post_id: str, retry_task=None):
             response_data=error_payload,
             error_message=error_payload['message'],
         )
-        if retry_task is not None and not _is_permanent_publish_error(e):
-            raise retry_task.retry(exc=e)
         raise
 
 

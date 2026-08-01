@@ -284,6 +284,12 @@ function VideoCard({ video, onDelete, onClick }) {
               {deliveryItems.map(item => (
                 <span
                   key={item.key}
+                  onClick={(e) => {
+                    if (item.status === 'failed' && item.errorMessage) {
+                      e.stopPropagation();
+                      toast.error(item.errorMessage, { duration: 6000 });
+                    }
+                  }}
                   className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] border ${
                     item.status === 'published'
                       ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
@@ -291,7 +297,7 @@ function VideoCard({ video, onDelete, onClick }) {
                         ? 'border-blue-500/20 bg-blue-500/10 text-blue-300'
                         : item.status === 'scheduled'
                           ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
-                          : 'border-red-500/20 bg-red-500/10 text-red-300'
+                          : 'border-red-500/20 bg-red-500/10 text-red-300 cursor-pointer hover:bg-red-500/20 active:scale-95 transition-all'
                   }`}
                   title={item.errorMessage || `${item.account} ${item.status}`}
                 >

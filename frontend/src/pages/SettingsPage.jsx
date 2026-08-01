@@ -2396,9 +2396,20 @@ const linkedinConnectMutation = useMutation({
           </div>
 
           {(demoForm.platform === 'instagram' || demoForm.platform === 'facebook') && (
-            <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-xs text-blue-100 space-y-2">
-              <p className="font-medium">Recommended: connect with Meta OAuth</p>
-              <p>Use this button to grant Page and Instagram publishing permissions. SocialMind will save the right Page token for Facebook and linked Instagram publishing.</p>
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-xs text-blue-100 space-y-3">
+              <div>
+                <p className="font-medium text-sm text-blue-200">Recommended: connect with Meta OAuth</p>
+                <p className="mt-1 text-white/70">Use this button to grant Page and Instagram publishing permissions. SocialMind will save the right Page token for Facebook and linked Instagram publishing.</p>
+              </div>
+
+              <div className="bg-blue-950/40 rounded-lg p-2.5 border border-blue-500/10 space-y-1">
+                <p className="font-semibold text-blue-300">⚠️ Instagram Pre-requisites:</p>
+                <ul className="list-disc pl-4 space-y-1 text-white/80">
+                  <li>Your Instagram must be a <strong>Professional (Business/Creator)</strong> account.</li>
+                  <li>It must be linked to your Facebook Page (Go to your <strong>Facebook Page &gt; Settings &gt; Linked Accounts &gt; Instagram</strong> to link them).</li>
+                </ul>
+              </div>
+
               <button
                 type="button"
                 onClick={() => metaConnectMutation.mutate()}

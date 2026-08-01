@@ -54,7 +54,7 @@ def _raise_for_status_with_body(response, *, platform: str = '', context: str = 
                 details['fbtrace_id'] = api_error.get('fbtrace_id')
                 if api_error.get('message'):
                     message = api_error['message']
-                hint = _meta_permission_hint(platform, details)
+                hint = _platform_permission_hint(platform, details)
                 if hint:
                     details['hint'] = hint
                     if hint not in message:
@@ -74,10 +74,18 @@ def _safe_json_loads(value: str):
         return None
 
 
-def _meta_permission_hint(platform: str, details: dict) -> str:
+def _platform_permission_hint(platform: str, details: dict) -> str:
     platform = (platform or '').lower()
-    code = int(details.get('error_code') or 0)
+    raw_code = details.get('error_code')
+    code = 0
+    if raw_code:
+        try:
+            code = int(raw_code)
+        except ValueError:
+            pass
+
     message = str((details.get('response_json') or {}).get('error', {}).get('message') or details.get('raw_body') or '').lower()
+    raw_code_str = str(raw_code or '').lower()
 
     if platform in {'instagram', 'facebook'}:
         if code == 190 or 'access token' in message or 'oauthexception' in message:
@@ -99,6 +107,18 @@ def _meta_permission_hint(platform: str, details: dict) -> str:
             return (
                 'Twitter/X publishing needs an OAuth 2.0 user access token with tweet.write, tweet.read, users.read, offline.access, and media.write permissions.'
             )
+
+    if platform == 'youtube':
+        if 'exceeded' in message or 'uploadlimit' in message or 'quota' in message:
+            return (
+                'YouTube upload limit reached. YouTube restricts the number of daily uploads per channel or API project. '
+                'If this is a new channel or if the shared Google API project has exhausted its daily quota, '
+                'wait 24 hours for Google to reset the limit.'
+            )
+
+    if platform == 'linkedin':
+        if 'expired' in raw_code_str or 'expired' in message or 'invalid' in message or 'access token' in message:
+            return 'LinkedIn access token looks expired or invalid. Reconnect your LinkedIn account from Settings to authorize it again.'
 
     return ''
 
@@ -202,10 +222,22 @@ class InstagramPublisher(PublisherBase):
             _raise_for_status_with_body(publish_response, platform='instagram', context='publish media container')
             post_id = publish_response.json().get('id')
 
+            # Fetch the actual permalink (which contains the correct shortcode URL)
+            url = f'https://www.instagram.com/p/{post_id}/'
+            try:
+                permalink_response = client.get(
+                    f'{self.BASE_URL}/{post_id}',
+                    params={'fields': 'permalink', 'access_token': access_token}
+                )
+                if permalink_response.status_code == 200:
+                    url = permalink_response.json().get('permalink') or url
+            except Exception as e:
+                logger.warning("Failed to retrieve Instagram permalink for media %s: %s", post_id, e)
+
             return {
                 'post_id': post_id,
                 'platform': 'instagram',
-                'url': f'https://www.instagram.com/p/{post_id}/',
+                'url': url,
                 'container_id': container_id,
             }
 
@@ -286,7 +318,7 @@ class LinkedInPublisher(PublisherBase):
     Posts videos to LinkedIn profiles or company pages.
     """
     BASE_URL = 'https://api.linkedin.com/rest'
-    API_VERSION = '202503'
+    API_VERSION = '202603'
 
     def publish(self, social_account, video_path: str, caption: str,
                 hashtags: list, **kwargs) -> dict:
