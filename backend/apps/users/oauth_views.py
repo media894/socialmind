@@ -248,7 +248,7 @@ def instagram_oauth_callback(request):
 def linkedin_oauth_start(request):
     """Redirect user to LinkedIn OAuth consent screen"""
     client_id = os.environ.get('LINKEDIN_CLIENT_ID', '')
-    redirect_uri = _public_oauth_redirect_uri('/api/v1/auth/linkedin/callback/', 'LINKEDIN_OAUTH_REDIRECT_BASE')
+    redirect_uri = _public_oauth_redirect_uri('/api/v1/auth/oauth/linkedin/callback/', 'LINKEDIN_OAUTH_REDIRECT_BASE')
     scopes = 'openid profile w_member_social w_organization_social'
     url = (
         f'https://www.linkedin.com/oauth/v2/authorization'
@@ -279,7 +279,7 @@ def linkedin_oauth_callback(request):
 
     client_id = os.environ.get('LINKEDIN_CLIENT_ID', '')
     client_secret = os.environ.get('LINKEDIN_CLIENT_SECRET', '')
-    redirect_uri = _public_oauth_redirect_uri('/api/v1/auth/linkedin/callback/', 'LINKEDIN_OAUTH_REDIRECT_BASE')
+    redirect_uri = _public_oauth_redirect_uri('/api/v1/auth/oauth/linkedin/callback/', 'LINKEDIN_OAUTH_REDIRECT_BASE')
 
     with httpx.Client(timeout=30) as client:
         token_resp = client.post(
