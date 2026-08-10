@@ -69,65 +69,181 @@ export const FEATURE_COMPARISON = [
   { label: 'Priority support', pro: false, enterprise: true },
 ]
 
-export const EXCHANGE_RATE_INR = 83
+export const COUNTRIES = [
+  {
+    code: 'IN',
+    name: 'India',
+    flag: '🇮🇳',
+    currency: 'INR',
+    symbol: '₹',
+    rate: 83,
+    taxName: 'GST (18%)',
+    taxRate: 18,
+    hasStates: true,
+    states: [
+      'Tamil Nadu', 'Maharashtra', 'Karnataka', 'Delhi', 'Telangana',
+      'Gujarat', 'Kerala', 'Uttar Pradesh', 'West Bengal', 'Andhra Pradesh',
+      'Rajasthan', 'Punjab', 'Haryana', 'Madhya Pradesh', 'Bihar', 'Other State'
+    ]
+  },
+  {
+    code: 'US',
+    name: 'United States',
+    flag: '🇺🇸',
+    currency: 'USD',
+    symbol: '$',
+    rate: 1,
+    taxName: 'Sales Tax (8.25%)',
+    taxRate: 8.25,
+    hasStates: false,
+  },
+  {
+    code: 'AE',
+    name: 'United Arab Emirates',
+    flag: '🇦🇪',
+    currency: 'AED',
+    symbol: 'AED ',
+    rate: 3.67,
+    taxName: 'VAT (5%)',
+    taxRate: 5,
+    hasStates: false,
+  },
+  {
+    code: 'GB',
+    name: 'United Kingdom',
+    flag: '🇬🇧',
+    currency: 'GBP',
+    symbol: '£',
+    rate: 0.79,
+    taxName: 'VAT (20%)',
+    taxRate: 20,
+    hasStates: false,
+  },
+  {
+    code: 'EU',
+    name: 'Europe (EU)',
+    flag: '🇪🇺',
+    currency: 'EUR',
+    symbol: '€',
+    rate: 0.92,
+    taxName: 'VAT (20%)',
+    taxRate: 20,
+    hasStates: false,
+  },
+  {
+    code: 'AU',
+    name: 'Australia',
+    flag: '🇦🇺',
+    currency: 'AUD',
+    symbol: 'A$',
+    rate: 1.52,
+    taxName: 'GST (10%)',
+    taxRate: 10,
+    hasStates: false,
+  },
+  {
+    code: 'CA',
+    name: 'Canada',
+    flag: '🇨🇦',
+    currency: 'CAD',
+    symbol: 'C$',
+    rate: 1.36,
+    taxName: 'GST/HST (13%)',
+    taxRate: 13,
+    hasStates: false,
+  },
+]
 
-export function detectUserCurrency() {
+export function detectUserCountry() {
   try {
     const tz = typeof window !== 'undefined' && Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || ''
     const lang = typeof navigator !== 'undefined' && navigator?.language || ''
     if (tz.includes('Kolkata') || tz.includes('Calcutta') || tz.includes('India') || lang.endsWith('-IN')) {
-      return 'INR'
+      return 'IN'
+    }
+    if (tz.includes('Dubai') || tz.includes('Muscat') || lang.endsWith('-AE')) {
+      return 'AE'
+    }
+    if (tz.includes('London') || lang.endsWith('-GB')) {
+      return 'GB'
+    }
+    if (tz.includes('Europe') || tz.includes('Paris') || tz.includes('Berlin')) {
+      return 'EU'
+    }
+    if (tz.includes('Sydney') || tz.includes('Melbourne') || lang.endsWith('-AU')) {
+      return 'AU'
+    }
+    if (tz.includes('Toronto') || tz.includes('Vancouver') || lang.endsWith('-CA')) {
+      return 'CA'
     }
   } catch (e) {
     // fallback
   }
-  return 'USD'
+  return 'US'
 }
 
 export function formatUsd(value) {
-  return formatPrice(value, 'USD')
+  return formatCurrencyAmount(value, 'US')
 }
 
-export function formatPrice(usdAmount, currency = 'USD') {
-  if (currency === 'INR') {
-    const inrAmount = usdAmount * EXCHANGE_RATE_INR
-    return formatCurrency(inrAmount, 'INR')
-  }
-  return formatCurrency(usdAmount, 'USD')
+export function formatPrice(usdAmount, countryCode = 'IN') {
+  const country = COUNTRIES.find(c => c.code === countryCode) || COUNTRIES[0]
+  const amount = usdAmount * country.rate
+  return formatCurrencyAmount(amount, countryCode)
 }
 
-export function formatCurrency(amount, currency = 'USD') {
-  if (currency === 'INR') {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
-    }).format(amount)
-  }
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrencyAmount(amount, countryCode = 'IN') {
+  const country = COUNTRIES.find(c => c.code === countryCode) || COUNTRIES[0]
+  return new Intl.NumberFormat(country.code === 'IN' ? 'en-IN' : 'en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: country.currency,
     maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
   }).format(amount)
 }
 
-export function calculatePriceDetails(usdAmount, currency = 'USD') {
-  const baseAmount = currency === 'INR' ? usdAmount * EXCHANGE_RATE_INR : usdAmount
-  const taxRate = 18
+export function calculatePriceDetails(usdAmount, countryCode = 'IN', stateName = 'Tamil Nadu') {
+  const country = COUNTRIES.find(c => c.code === countryCode) || COUNTRIES[0]
+  const baseAmount = usdAmount * country.rate
+  const taxRate = country.taxRate
   const taxAmount = (baseAmount * taxRate) / 100
   const totalAmount = baseAmount + taxAmount
+
+  let taxBreakdown = []
+  if (country.code === 'IN') {
+    const halfTax = taxAmount / 2
+    if (stateName === 'Tamil Nadu' || !stateName) {
+      taxBreakdown = [
+        { label: 'CGST (9%)', amount: halfTax },
+        { label: 'SGST (9%)', amount: halfTax },
+      ]
+    } else {
+      taxBreakdown = [
+        { label: 'IGST (18%)', amount: taxAmount },
+      ]
+    }
+  } else {
+    taxBreakdown = [
+      { label: country.taxName, amount: taxAmount },
+    ]
+  }
+
   return {
-    currency,
-    currencySymbol: currency === 'INR' ? '₹' : '$',
+    country,
+    countryCode: country.code,
+    currency: country.currency,
+    currencySymbol: country.symbol,
     baseAmount,
     taxRate,
     taxAmount,
     totalAmount,
-    taxLabel: currency === 'INR' ? '18% GST' : '18% Tax',
+    taxName: country.taxName,
+    taxBreakdown,
+    stateName,
   }
 }
 
 export function getPlanByKey(planKey) {
   return SUBSCRIPTION_PLANS.find(plan => plan.key === planKey)
 }
+
 

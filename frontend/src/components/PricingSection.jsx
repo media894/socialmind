@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import { ArrowRight, Check, Globe, Shield, Sparkles, X, Zap } from 'lucide-react'
-import { FEATURE_COMPARISON, detectUserCurrency, formatPrice, formatCurrency, calculatePriceDetails } from '@/config/pricingPlans'
+import { ArrowRight, Check, Globe, MapPin, Shield, Sparkles, X, Zap } from 'lucide-react'
+import {
+  FEATURE_COMPARISON,
+  COUNTRIES,
+  detectUserCountry,
+  formatPrice,
+  formatCurrencyAmount,
+  calculatePriceDetails,
+} from '@/config/pricingPlans'
 
 const BENEFITS = [
   { icon: '⏱', label: 'Save 10+ hours per week' },
@@ -56,13 +63,16 @@ const PLANS = {
 
 export default function PricingSection({ onClose, onStartTrial, onContactSales, onViewDemo, onSelectPlan }) {
   const [billing, setBilling] = useState('monthly')
-  const [currency, setCurrency] = useState(() => detectUserCurrency())
+  const [countryCode, setCountryCode] = useState(() => detectUserCountry())
+  const [stateName, setStateName] = useState('Tamil Nadu')
   const [showDiff, setShowDiff] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [activeCard, setActiveCard] = useState('both')
   const containerRef = useRef(null)
   const proRef = useRef(null)
   const entRef = useRef(null)
+
+  const selectedCountry = COUNTRIES.find(c => c.code === countryCode) || COUNTRIES[0]
 
   useEffect(() => {
     const el = containerRef.current
@@ -102,14 +112,14 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
   }, [])
 
   function fmt(usdVal) {
-    return formatPrice(usdVal, currency)
+    return formatPrice(usdVal, countryCode)
   }
 
   function handleAction(action) {
     const planKey = action === 'trial' ? 'pro' : 'enterprise'
     const planData = PLANS[planKey]
     const price = billing === 'annual' ? planData.annual : planData.monthly
-    const priceDetails = calculatePriceDetails(price, currency)
+    const priceDetails = calculatePriceDetails(price, countryCode, stateName)
 
     if (onSelectPlan) {
       onSelectPlan({
@@ -117,7 +127,9 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
         name: planData.name,
         eyebrow: planData.tag,
         monthlyPrice: price,
-        currency: currency,
+        countryCode: countryCode,
+        stateName: stateName,
+        currency: priceDetails.currency,
         priceDetails: priceDetails,
         billing: billing,
         quota: planKey === 'pro' ? '50 videos / month' : 'Unlimited videos',
@@ -139,11 +151,11 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
       <div className="absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-brand-600/20 to-transparent pointer-events-none" />
 
       {/* ── Header ── */}
-      <div className="relative px-6 pt-7 pb-6 sm:px-10 border-b border-white/[0.07] flex items-start justify-between gap-4">
+      <div className="relative px-6 pt-7 pb-6 sm:px-10 border-b border-white/[0.07] flex items-start justify-between gap-4 flex-wrap">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-brand-400 flex items-center gap-1.5">
             <span className="inline-block w-5 border-t border-brand-400/60" />
-            PRICING
+            PRICING & LOCATION
             <span className="inline-block w-5 border-t border-brand-400/60" />
           </p>
           <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -166,33 +178,40 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Location & Currency Selector */}
-          <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] p-1 text-xs">
-            <Globe className="w-3.5 h-3.5 ml-1.5 text-white/40 shrink-0" />
-            <button
-              type="button"
-              onClick={() => setCurrency('INR')}
-              className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${
-                currency === 'INR'
-                  ? 'bg-brand-500 text-white shadow-sm'
-                  : 'text-white/40 hover:text-white'
-              }`}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Location & Country Selector */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-2.5 py-1.5 text-xs">
+            <Globe className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+            <select
+              value={countryCode}
+              onChange={(e) => setCountryCode(e.target.value)}
+              className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1"
             >
-              🇮🇳 INR (₹)
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrency('USD')}
-              className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${
-                currency === 'USD'
-                  ? 'bg-brand-500 text-white shadow-sm'
-                  : 'text-white/40 hover:text-white'
-              }`}
-            >
-              🇺🇸 USD ($)
-            </button>
+              {COUNTRIES.map(c => (
+                <option key={c.code} value={c.code} className="bg-[#0d0d18] text-white">
+                  {c.flag} {c.name} ({c.currency} {c.symbol})
+                </option>
+              ))}
+            </select>
           </div>
+
+          {/* State Selector for India GST */}
+          {selectedCountry.hasStates && (
+            <div className="flex items-center gap-1.5 rounded-xl border border-brand-500/30 bg-brand-500/10 px-2.5 py-1.5 text-xs">
+              <MapPin className="w-3.5 h-3.5 text-brand-300 shrink-0" />
+              <select
+                value={stateName}
+                onChange={(e) => setStateName(e.target.value)}
+                className="bg-transparent text-brand-200 font-bold text-xs focus:outline-none cursor-pointer pr-1"
+              >
+                {selectedCountry.states.map(s => (
+                  <option key={s} value={s} className="bg-[#0d0d18] text-white">
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <button
             type="button"
@@ -237,7 +256,7 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
       <div className="relative grid gap-4 px-6 pb-6 sm:px-10 sm:pb-8 lg:grid-cols-2">
         {Object.entries(PLANS).map(([key, plan]) => {
           const price = billing === 'annual' ? plan.annual : plan.monthly
-          const details = calculatePriceDetails(price, currency)
+          const details = calculatePriceDetails(price, countryCode, stateName)
 
           return (
             <div
@@ -301,9 +320,24 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
                 </div>
                 
                 {/* Tax label */}
-                <div className="mt-1.5 flex items-center gap-1.5 text-xs text-brand-300 font-medium">
-                  <span>+ {details.taxLabel} ({formatCurrency(details.taxAmount, currency)})</span>
-                  <span className="text-[10px] text-white/40">(Total: {formatCurrency(details.totalAmount, currency)})</span>
+                <div className="mt-2 rounded-xl border border-brand-400/15 bg-brand-400/[0.06] p-2.5 space-y-1 text-xs">
+                  <div className="flex items-center justify-between text-brand-300 font-medium">
+                    <span>+ {details.taxName} ({formatCurrencyAmount(details.taxAmount, countryCode)})</span>
+                    <span className="text-[10px] text-white/40">Total: {formatCurrencyAmount(details.totalAmount, countryCode)}</span>
+                  </div>
+                  {/* GST CGST/SGST/IGST breakdown */}
+                  {details.taxBreakdown.length > 0 && (
+                    <div className="flex flex-wrap gap-2 text-[10px] text-white/50 pt-1 border-t border-white/[0.06]">
+                      {details.taxBreakdown.map(tb => (
+                        <span key={tb.label} className="bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
+                          {tb.label}: {formatCurrencyAmount(tb.amount, countryCode)}
+                        </span>
+                      ))}
+                      {countryCode === 'IN' && (
+                        <span className="text-emerald-300 font-semibold">State: {stateName}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {billing === 'annual' && (
@@ -442,4 +476,5 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
     </section>
   )
 }
+
 

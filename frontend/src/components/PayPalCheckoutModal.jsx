@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 
 import PayPalSubscriptionButton from '@/components/PayPalSubscriptionButton'
 import { billingApi } from '@/api/client'
-import { formatCurrency, calculatePriceDetails } from '@/config/pricingPlans'
+import { formatCurrencyAmount, calculatePriceDetails } from '@/config/pricingPlans'
 import { useAuthStore } from '@/store/auth'
 
 export default function PayPalCheckoutModal({ open, plan, onClose, onSuccess, onRequireAuth }) {
@@ -60,8 +60,9 @@ export default function PayPalCheckoutModal({ open, plan, onClose, onSuccess, on
 
   const missingConfig = !loadingConfig && (!config?.client_id || !planId)
 
-  const currency = plan.currency || 'USD'
-  const details = plan.priceDetails || calculatePriceDetails(plan.monthlyPrice || 0, currency)
+  const countryCode = plan.countryCode || 'IN'
+  const stateName = plan.stateName || 'Tamil Nadu'
+  const details = plan.priceDetails || calculatePriceDetails(plan.monthlyPrice || 0, countryCode, stateName)
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
@@ -89,10 +90,12 @@ export default function PayPalCheckoutModal({ open, plan, onClose, onSuccess, on
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-white">{plan.eyebrow}</p>
-                <p className="mt-0.5 text-xs text-white/45">PayPal subscription billing ({plan.billing === 'annual' ? 'Annual' : 'Monthly'})</p>
+                <p className="mt-0.5 text-xs text-white/45">
+                  {details.country.flag} {details.country.name} {details.stateName ? `(${details.stateName})` : ''} · PayPal billing ({plan.billing === 'annual' ? 'Annual' : 'Monthly'})
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-black text-white">{formatCurrency(details.totalAmount, currency)}</p>
+                <p className="text-2xl font-black text-white">{formatCurrencyAmount(details.totalAmount, countryCode)}</p>
                 <p className="text-[11px] text-white/35">/month total</p>
               </div>
             </div>
@@ -101,15 +104,20 @@ export default function PayPalCheckoutModal({ open, plan, onClose, onSuccess, on
             <div className="border-t border-white/10 pt-2.5 space-y-1.5 text-xs">
               <div className="flex justify-between text-white/60">
                 <span>Base Subscription:</span>
-                <span className="font-semibold text-white/80">{formatCurrency(details.baseAmount, currency)}</span>
+                <span className="font-semibold text-white/80">{formatCurrencyAmount(details.baseAmount, countryCode)}</span>
               </div>
-              <div className="flex justify-between text-brand-300">
-                <span>Location Tax ({details.taxLabel}):</span>
-                <span className="font-semibold">{formatCurrency(details.taxAmount, currency)}</span>
-              </div>
-              <div className="flex justify-between pt-1 border-t border-white/[0.06] font-bold text-white">
-                <span>Total Amount:</span>
-                <span className="text-emerald-300">{formatCurrency(details.totalAmount, currency)}</span>
+
+              {/* Itemized Tax Lines */}
+              {details.taxBreakdown.map(tb => (
+                <div key={tb.label} className="flex justify-between text-brand-300">
+                  <span>{tb.label}:</span>
+                  <span className="font-semibold">{formatCurrencyAmount(tb.amount, countryCode)}</span>
+                </div>
+              ))}
+
+              <div className="flex justify-between pt-1.5 border-t border-white/[0.08] font-bold text-sm text-white">
+                <span>Total Amount Payable:</span>
+                <span className="text-emerald-300">{formatCurrencyAmount(details.totalAmount, countryCode)}</span>
               </div>
             </div>
           </div>
