@@ -13,7 +13,9 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') + [
     'evacuee-chaperone-stuffed.ngrok-free.dev',
-    '.onrender.com',  # allows all render subdomains
+    '.onrender.com',              # allows all render subdomains
+    'socialmind.oddinfotech.site', # custom production domain
+    '200.97.165.171',
 ]
 
 INSTALLED_APPS = [

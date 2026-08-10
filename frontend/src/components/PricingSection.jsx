@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { ArrowRight, Check, Shield, Sparkles, X, Zap } from 'lucide-react'
-import { FEATURE_COMPARISON } from '@/config/pricingPlans'
+import { ArrowRight, Check, Globe, Shield, Sparkles, X, Zap } from 'lucide-react'
+import { FEATURE_COMPARISON, detectUserCurrency, formatPrice, formatCurrency, calculatePriceDetails } from '@/config/pricingPlans'
 
 const BENEFITS = [
   { icon: '⏱', label: 'Save 10+ hours per week' },
@@ -14,8 +14,8 @@ const PLANS = {
     tag: 'PRO PLAN',
     name: 'Individual',
     desc: 'Perfect for solo creators who want to automate their social presence',
-    monthly: 20,
-    annual: 16,
+    monthly: 10,
+    annual: 8,
     cta: 'Start 14-day Free Trial',
     action: 'trial',
     featured: false,
@@ -35,8 +35,8 @@ const PLANS = {
     tag: 'ENTERPRISE PLAN',
     name: 'Team',
     desc: "Scale your team's content creation with AI superpowers",
-    monthly: 79,
-    annual: 63,
+    monthly: 39.5,
+    annual: 31.5,
     cta: 'Contact Sales',
     action: 'sales',
     featured: true,
@@ -54,12 +54,9 @@ const PLANS = {
   },
 }
 
-function fmt(n) {
-  return '$' + n.toLocaleString('en-US')
-}
-
 export default function PricingSection({ onClose, onStartTrial, onContactSales, onViewDemo, onSelectPlan }) {
   const [billing, setBilling] = useState('monthly')
+  const [currency, setCurrency] = useState(() => detectUserCurrency())
   const [showDiff, setShowDiff] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [activeCard, setActiveCard] = useState('both')
@@ -76,13 +73,11 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
         setShowDiff(false)
         return
       }
-      // show when user scrolls past the header area
       setShowDiff(window.scrollY > el.getBoundingClientRect().top + 80)
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
 
-    // IntersectionObserver to detect which card is most visible
     const obs = new IntersectionObserver((entries) => {
       let best = null
       for (const e of entries) {
@@ -106,16 +101,24 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
     }
   }, [])
 
+  function fmt(usdVal) {
+    return formatPrice(usdVal, currency)
+  }
+
   function handleAction(action) {
+    const planKey = action === 'trial' ? 'pro' : 'enterprise'
+    const planData = PLANS[planKey]
+    const price = billing === 'annual' ? planData.annual : planData.monthly
+    const priceDetails = calculatePriceDetails(price, currency)
+
     if (onSelectPlan) {
-      const planKey = action === 'trial' ? 'pro' : 'enterprise'
-      const planData = PLANS[planKey]
-      const price = billing === 'annual' ? planData.annual : planData.monthly
       onSelectPlan({
         key: planKey,
         name: planData.name,
         eyebrow: planData.tag,
         monthlyPrice: price,
+        currency: currency,
+        priceDetails: priceDetails,
         billing: billing,
         quota: planKey === 'pro' ? '50 videos / month' : 'Unlimited videos',
         note: planKey === 'pro' ? '1 SocialMind account · AI-powered' : 'Up to 5 team members · SSO included',
@@ -129,8 +132,6 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
 
   const proFeatures = PLANS.pro.features
   const entFeatures = PLANS.enterprise.features
-  const entOnly = entFeatures.filter(f => !proFeatures.includes(f))
-  const proOnly = proFeatures.filter(f => !entFeatures.includes(f))
 
   return (
     <section ref={containerRef} className="relative bg-[#0d0d18] text-white select-none">
@@ -165,14 +166,43 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 rounded-xl border border-white/10 bg-white/[0.04] p-2 text-white/40 hover:text-white hover:bg-white/[0.08] transition"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Location & Currency Selector */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] p-1 text-xs">
+            <Globe className="w-3.5 h-3.5 ml-1.5 text-white/40 shrink-0" />
+            <button
+              type="button"
+              onClick={() => setCurrency('INR')}
+              className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${
+                currency === 'INR'
+                  ? 'bg-brand-500 text-white shadow-sm'
+                  : 'text-white/40 hover:text-white'
+              }`}
+            >
+              🇮🇳 INR (₹)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrency('USD')}
+              className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition ${
+                currency === 'USD'
+                  ? 'bg-brand-500 text-white shadow-sm'
+                  : 'text-white/40 hover:text-white'
+              }`}
+            >
+              🇺🇸 USD ($)
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded-xl border border-white/10 bg-white/[0.04] p-2 text-white/40 hover:text-white hover:bg-white/[0.08] transition"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* ── Billing toggle ── */}
@@ -207,6 +237,7 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
       <div className="relative grid gap-4 px-6 pb-6 sm:px-10 sm:pb-8 lg:grid-cols-2">
         {Object.entries(PLANS).map(([key, plan]) => {
           const price = billing === 'annual' ? plan.annual : plan.monthly
+          const details = calculatePriceDetails(price, currency)
 
           return (
             <div
@@ -262,10 +293,19 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
                 </button>
               </div>
 
-              {/* current price */}
+              {/* current price & tax breakdown */}
               <div className="mb-6">
-                <span className="text-4xl font-black tracking-tight">{fmt(price)}</span>
-                <span className="ml-1 text-sm text-white/35">/month</span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-4xl font-black tracking-tight">{fmt(price)}</span>
+                  <span className="text-sm text-white/35">/month</span>
+                </div>
+                
+                {/* Tax label */}
+                <div className="mt-1.5 flex items-center gap-1.5 text-xs text-brand-300 font-medium">
+                  <span>+ {details.taxLabel} ({formatCurrency(details.taxAmount, currency)})</span>
+                  <span className="text-[10px] text-white/40">(Total: {formatCurrency(details.totalAmount, currency)})</span>
+                </div>
+
                 {billing === 'annual' && (
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="text-xs text-white/55">
@@ -330,7 +370,7 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
       {/* ── Footer ── */}
       <div className="relative border-t border-white/[0.07] px-6 py-4 sm:px-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-[11px] text-white/30">
-          All plans include secure account storage, scheduling tools, and app updates.
+          All plans include secure account storage, scheduling tools, and app updates. Applicable location taxes included at checkout.
         </p>
         <button
           type="button"
@@ -402,3 +442,4 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
     </section>
   )
 }
+

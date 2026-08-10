@@ -200,7 +200,7 @@ const KB = [
     icon: CreditCard, color: '#22d3ee',
     chips: ['quota', 'contact'],
     question: 'How do I upgrade my plan?',
-    answer: `To upgrade your SocialMind plan:\n\n• Go to **Settings** in the sidebar\n• Click **View Plans**\n• Choose **Individual** or **Team**\n• Complete checkout with PayPal to activate your subscription\n\n**Available Plans:**\n• **Individual** — $20/month · 50 AI videos/month\n• **Team** — $79/month · Up to 5 members, SSO, priority support\n\nNeed help choosing? Email us at **${SUPPORT_EMAIL}**`,
+    answer: `To upgrade your SocialMind plan:\n\n• Go to **Settings** in the sidebar\n• Click **View Plans**\n• Choose **Individual** or **Team**\n• Complete checkout with PayPal to activate your subscription\n\n**Available Plans:**\n• **Individual** — $10/month · 50 AI videos/month\n• **Team** — $39.50/month · Up to 5 members, SSO, priority support\n\nNeed help choosing? Email us at **${SUPPORT_EMAIL}**`,
     isContact: true,
   },
 

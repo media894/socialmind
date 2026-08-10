@@ -4,8 +4,8 @@ export const SUBSCRIPTION_PLANS = [
     eyebrow: 'Pro Plan',
     name: 'Individual',
     description: 'Perfect for solo creators who want to automate their social presence',
-    monthlyPrice: 20,
-    annualMonthlyPrice: 16,
+    monthlyPrice: 10,
+    annualMonthlyPrice: 8,
     cta: 'Start 14-day Free Trial',
     demoLabel: 'View Demo',
     featured: false,
@@ -27,8 +27,8 @@ export const SUBSCRIPTION_PLANS = [
     eyebrow: 'Enterprise Plan',
     name: 'Team',
     description: "Scale your team's content creation with AI superpowers",
-    monthlyPrice: 79,
-    annualMonthlyPrice: 63,
+    monthlyPrice: 39.5,
+    annualMonthlyPrice: 31.5,
     cta: 'Continue with PayPal',
     demoLabel: 'View Demo',
     featured: true,
@@ -69,14 +69,65 @@ export const FEATURE_COMPARISON = [
   { label: 'Priority support', pro: false, enterprise: true },
 ]
 
+export const EXCHANGE_RATE_INR = 83
+
+export function detectUserCurrency() {
+  try {
+    const tz = typeof window !== 'undefined' && Intl?.DateTimeFormat?.().resolvedOptions?.().timeZone || ''
+    const lang = typeof navigator !== 'undefined' && navigator?.language || ''
+    if (tz.includes('Kolkata') || tz.includes('Calcutta') || tz.includes('India') || lang.endsWith('-IN')) {
+      return 'INR'
+    }
+  } catch (e) {
+    // fallback
+  }
+  return 'USD'
+}
+
 export function formatUsd(value) {
+  return formatPrice(value, 'USD')
+}
+
+export function formatPrice(usdAmount, currency = 'USD') {
+  if (currency === 'INR') {
+    const inrAmount = usdAmount * EXCHANGE_RATE_INR
+    return formatCurrency(inrAmount, 'INR')
+  }
+  return formatCurrency(usdAmount, 'USD')
+}
+
+export function formatCurrency(amount, currency = 'USD') {
+  if (currency === 'INR') {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    }).format(amount)
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(value)
+    maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+  }).format(amount)
+}
+
+export function calculatePriceDetails(usdAmount, currency = 'USD') {
+  const baseAmount = currency === 'INR' ? usdAmount * EXCHANGE_RATE_INR : usdAmount
+  const taxRate = 18
+  const taxAmount = (baseAmount * taxRate) / 100
+  const totalAmount = baseAmount + taxAmount
+  return {
+    currency,
+    currencySymbol: currency === 'INR' ? '₹' : '$',
+    baseAmount,
+    taxRate,
+    taxAmount,
+    totalAmount,
+    taxLabel: currency === 'INR' ? '18% GST' : '18% Tax',
+  }
 }
 
 export function getPlanByKey(planKey) {
   return SUBSCRIPTION_PLANS.find(plan => plan.key === planKey)
 }
+

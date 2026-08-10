@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 
 import PayPalSubscriptionButton from '@/components/PayPalSubscriptionButton'
 import { billingApi } from '@/api/client'
-import { formatUsd } from '@/config/pricingPlans'
+import { formatCurrency, calculatePriceDetails } from '@/config/pricingPlans'
 import { useAuthStore } from '@/store/auth'
 
 export default function PayPalCheckoutModal({ open, plan, onClose, onSuccess, onRequireAuth }) {
@@ -60,6 +60,9 @@ export default function PayPalCheckoutModal({ open, plan, onClose, onSuccess, on
 
   const missingConfig = !loadingConfig && (!config?.client_id || !planId)
 
+  const currency = plan.currency || 'USD'
+  const details = plan.priceDetails || calculatePriceDetails(plan.monthlyPrice || 0, currency)
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={!processing ? onClose : undefined} />
@@ -82,14 +85,32 @@ export default function PayPalCheckoutModal({ open, plan, onClose, onSuccess, on
         </div>
 
         <div className="p-6 space-y-5">
-          <div className="rounded-xl border border-brand-400/20 bg-brand-400/[0.08] p-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-bold text-white">{plan.eyebrow}</p>
-              <p className="mt-1 text-xs text-white/45">PayPal subscription billing</p>
+          <div className="rounded-xl border border-brand-400/20 bg-brand-400/[0.08] p-4 space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-white">{plan.eyebrow}</p>
+                <p className="mt-0.5 text-xs text-white/45">PayPal subscription billing ({plan.billing === 'annual' ? 'Annual' : 'Monthly'})</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-black text-white">{formatCurrency(details.totalAmount, currency)}</p>
+                <p className="text-[11px] text-white/35">/month total</p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-black text-white">{formatUsd(plan.monthlyPrice)}</p>
-              <p className="text-[11px] text-white/35">/month</p>
+
+            {/* Tax Breakdown */}
+            <div className="border-t border-white/10 pt-2.5 space-y-1.5 text-xs">
+              <div className="flex justify-between text-white/60">
+                <span>Base Subscription:</span>
+                <span className="font-semibold text-white/80">{formatCurrency(details.baseAmount, currency)}</span>
+              </div>
+              <div className="flex justify-between text-brand-300">
+                <span>Location Tax ({details.taxLabel}):</span>
+                <span className="font-semibold">{formatCurrency(details.taxAmount, currency)}</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-white/[0.06] font-bold text-white">
+                <span>Total Amount:</span>
+                <span className="text-emerald-300">{formatCurrency(details.totalAmount, currency)}</span>
+              </div>
             </div>
           </div>
 

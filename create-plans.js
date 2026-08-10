@@ -20,8 +20,8 @@ const SECRET    = 'EAAlw97dkeaeeAdTRCMoOoJOtlNwbeTwVpLqwsraiFdeolOrs854YRjkJ9cKA
                || process.env.PAYPAL_SECRET
                || 'YOUR_SECRET_HERE';
 
-// Change to 'https://api-m.sandbox.paypal.com' for sandbox testing
-const BASE_URL  = process.env.PAYPAL_BASE_URL || 'https://api-m.paypal.com';
+// LIVE PayPal API (real money)
+const BASE_URL  = 'https://api-m.paypal.com';
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -96,8 +96,8 @@ async function main() {
 
   const token     = await getAccessToken();
   const productId = await createProduct(token);
-  const proId     = await createPlan(token, productId, 'SocialMind Pro',        '20');
-  const entId     = await createPlan(token, productId, 'SocialMind Enterprise', '50');
+  const proId     = await createPlan(token, productId, 'SocialMind Pro',        '20');  // $20/month
+  const entId     = await createPlan(token, productId, 'SocialMind Enterprise', '79');  // $79/month
 
   console.log(`
 ╔══════════════════════════════════════════════════════════╗
