@@ -152,6 +152,28 @@ export const COUNTRIES = [
     taxRate: 13,
     hasStates: false,
   },
+  {
+    code: 'SG',
+    name: 'Singapore',
+    flag: '🇸🇬',
+    currency: 'SGD',
+    symbol: 'S$',
+    rate: 1.35,
+    taxName: 'GST (9%)',
+    taxRate: 9,
+    hasStates: false,
+  },
+  {
+    code: 'SA',
+    name: 'Saudi Arabia',
+    flag: '🇸🇦',
+    currency: 'SAR',
+    symbol: 'SAR ',
+    rate: 3.75,
+    taxName: 'VAT (15%)',
+    taxRate: 15,
+    hasStates: false,
+  },
 ]
 
 export function detectUserCountry() {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { ArrowRight, Check, Globe, MapPin, Shield, Sparkles, X, Zap } from 'lucide-react'
+import { ArrowRight, Check, ChevronDown, Globe, MapPin, Shield, Sparkles, X, Zap } from 'lucide-react'
 import {
   FEATURE_COMPARISON,
   COUNTRIES,
@@ -178,49 +178,83 @@ export default function PricingSection({ onClose, onStartTrial, onContactSales, 
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Location & Country Selector */}
-          <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-2.5 py-1.5 text-xs">
-            <Globe className="w-3.5 h-3.5 text-brand-400 shrink-0" />
-            <select
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-              className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1"
-            >
-              {COUNTRIES.map(c => (
-                <option key={c.code} value={c.code} className="bg-[#0d0d18] text-white">
-                  {c.flag} {c.name} ({c.currency} {c.symbol})
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-col sm:items-end gap-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-brand-300 flex items-center gap-1">
+              <Globe className="w-3.5 h-3.5" />
+              Country & Currency:
+            </span>
           </div>
 
-          {/* State Selector for India GST */}
-          {selectedCountry.hasStates && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-brand-500/30 bg-brand-500/10 px-2.5 py-1.5 text-xs">
-              <MapPin className="w-3.5 h-3.5 text-brand-300 shrink-0" />
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Country Selector Dropdown */}
+            <div className="flex items-center gap-2 rounded-xl border border-brand-500/40 bg-brand-500/[0.12] px-3 py-2 text-xs font-bold text-white shadow-md hover:border-brand-400 transition">
+              <span>{selectedCountry.flag}</span>
               <select
-                value={stateName}
-                onChange={(e) => setStateName(e.target.value)}
-                className="bg-transparent text-brand-200 font-bold text-xs focus:outline-none cursor-pointer pr-1"
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                className="bg-transparent text-white font-extrabold text-xs focus:outline-none cursor-pointer pr-1"
               >
-                {selectedCountry.states.map(s => (
-                  <option key={s} value={s} className="bg-[#0d0d18] text-white">
-                    {s}
+                {COUNTRIES.map(c => (
+                  <option key={c.code} value={c.code} className="bg-[#0d0b1f] text-white py-1">
+                    {c.flag} {c.name} — {c.currency} ({c.symbol})
                   </option>
                 ))}
               </select>
+              <ChevronDown className="w-3.5 h-3.5 text-brand-300 pointer-events-none -ml-1" />
             </div>
-          )}
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="shrink-0 rounded-xl border border-white/10 bg-white/[0.04] p-2 text-white/40 hover:text-white hover:bg-white/[0.08] transition"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
+            {/* State Selector for India GST */}
+            {selectedCountry.hasStates && (
+              <div className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/[0.12] px-3 py-2 text-xs font-bold text-emerald-200 shadow-md">
+                <MapPin className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                <select
+                  value={stateName}
+                  onChange={(e) => setStateName(e.target.value)}
+                  className="bg-transparent text-emerald-200 font-extrabold text-xs focus:outline-none cursor-pointer pr-1"
+                >
+                  {selectedCountry.states.map(s => (
+                    <option key={s} value={s} className="bg-[#0d0b1f] text-white py-1">
+                      State: {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 rounded-xl border border-white/10 bg-white/[0.04] p-2 text-white/40 hover:text-white hover:bg-white/[0.08] transition"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Quick country pills */}
+          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+            {[
+              { code: 'IN', label: '🇮🇳 INR (₹)' },
+              { code: 'US', label: '🇺🇸 USD ($)' },
+              { code: 'AE', label: '🇦🇪 AED' },
+              { code: 'GB', label: '🇬🇧 GBP (£)' },
+              { code: 'EU', label: '🇪🇺 EUR (€)' },
+            ].map(pill => (
+              <button
+                key={pill.code}
+                type="button"
+                onClick={() => setCountryCode(pill.code)}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition border ${
+                  countryCode === pill.code
+                    ? 'border-brand-400 bg-brand-500/20 text-brand-300'
+                    : 'border-white/10 bg-white/[0.03] text-white/40 hover:text-white hover:border-white/20'
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
