@@ -52,13 +52,12 @@ def groq_proxy(request):
     if not groq_key:
         return Response({'error': 'GROQ_API_KEY not configured on server or in request'}, status=400)
     
-    requested_model = str(payload.get('model', '')).strip()
-    models_to_try = [requested_model, 'llama-3.1-8b-instant', 'llama-3.3-70b-specdec', 'mixtral-8x7b-32768', 'llama3-70b-8192', 'llama3-8b-8192']
+    models_to_try = ['llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it']
     seen = set()
     last_resp = None
 
     for m in models_to_try:
-        if not m or m in seen or 'versatile' in m:
+        if not m or m in seen:
             continue
         seen.add(m)
         payload['model'] = m
