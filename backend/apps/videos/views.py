@@ -22,17 +22,33 @@ from apps.users.access_control import (
     enforce_video_access,
 )
 from apps.users.models import UserActivityLog
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from apps.users.views import log_activity
 
 
+def _get_groq_key_for_request(request):
+    key = (request.data.get('groq_key') or '').strip()
+    if not key:
+        key = os.environ.get('GROQ_API_KEY', '').strip()
+    if not key and getattr(request, 'user', None) and request.user.is_authenticated:
+        try:
+            from apps.users.models import APIKeyConfig
+            key_obj = APIKeyConfig.objects.filter(user=request.user, service='groq', is_active=True).first()
+            if key_obj:
+                key = key_obj.get_key().strip()
+        except Exception:
+            pass
+    return key
+
+
 @api_view(['POST'])
-@authentication_classes([])
+@authentication_classes([JWTAuthentication])
 @permission_classes([AllowAny])
 def groq_proxy(request):
     payload = request.data.get('payload', {})
-    groq_key = os.environ.get('GROQ_API_KEY') or request.data.get('groq_key', '')
+    groq_key = _get_groq_key_for_request(request)
     if not groq_key:
-        return Response({'error': 'GROQ_API_KEY not configured on server'}, status=400)
+        return Response({'error': 'GROQ_API_KEY not configured on server or in request'}, status=400)
     try:
         with httpx.Client(timeout=30) as client:
             resp = client.post('https://api.groq.com/openai/v1/chat/completions',
@@ -44,10 +60,10 @@ def groq_proxy(request):
 
 
 @api_view(['POST'])
-@authentication_classes([])
+@authentication_classes([JWTAuthentication])
 @permission_classes([AllowAny])
 def groq_tts_proxy(request):
-    groq_key = os.environ.get('GROQ_API_KEY') or request.data.get('groq_key', '')
+    groq_key = _get_groq_key_for_request(request)
     text = request.data.get('input', '')
     if not text:
         return Response({'error': 'input text required'}, status=400)

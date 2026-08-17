@@ -329,8 +329,9 @@ export default function CreateVideoPage() {
 function AIVideoGenerator({ onVideoReady }) {
   const user = useAuthStore(state => state.user)
   const updateUser = useAuthStore(state => state.updateUser)
-  const [groqKey,      setGroqKey]      = useState(import.meta.env.VITE_GROQ_API_KEY || '')
-  const [pexelsKey,    setPexelsKey]    = useState(import.meta.env.VITE_PEXELS_API_KEY || '')
+  const [groqKey,      setGroqKey]      = useState(() => localStorage.getItem('sm_groq_key') || localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY || '')
+  const [pexelsKey,    setPexelsKey]    = useState(() => localStorage.getItem('sm_pexels_key') || localStorage.getItem('pexels_api_key') || import.meta.env.VITE_PEXELS_API_KEY || '')
+  const [showKeyConfig, setShowKeyConfig] = useState(false)
   const [usePrompt,    setUsePrompt]    = useState(false)
   const [customPrompt, setCustomPrompt] = useState('')
   const [companyName,  setCompanyName]  = useState('')
@@ -358,6 +359,40 @@ function AIVideoGenerator({ onVideoReady }) {
   const [recState,     setRecState]     = useState('idle') // idle | recording | done | error
   const [blobUrl,      setBlobUrl]      = useState(null)
   const [sizeMB,       setSizeMB]       = useState(null)
+
+  // Sync API keys from localStorage and database
+  useEffect(() => {
+    const lGroq = localStorage.getItem('sm_groq_key') || localStorage.getItem('groq_api_key')
+    const lPexels = localStorage.getItem('sm_pexels_key') || localStorage.getItem('pexels_api_key')
+    if (lGroq) setGroqKey(lGroq)
+    if (lPexels) setPexelsKey(lPexels)
+
+    if (user?.id) {
+      apiKeysApi.list().then(r => {
+        const list = Array.isArray(r.data) ? r.data : (r.data?.results || [])
+        const g = list.find(k => k.service === 'groq' && k.is_active)
+        if (g && g.raw_key) { setGroqKey(g.raw_key); localStorage.setItem('sm_groq_key', g.raw_key) }
+        const p = list.find(k => k.service === 'pexels' && k.is_active)
+        if (p && p.raw_key) { setPexelsKey(p.raw_key); localStorage.setItem('sm_pexels_key', p.raw_key) }
+      }).catch(() => {})
+    }
+  }, [user])
+
+  const updateGroqKeyVal = (val) => {
+    setGroqKey(val)
+    localStorage.setItem('sm_groq_key', val)
+    if (user?.id && val.trim()) {
+      apiKeysApi.create({ service: 'groq', label: 'Groq API Key', raw_key: val.trim() }).catch(() => {})
+    }
+  }
+
+  const updatePexelsKeyVal = (val) => {
+    setPexelsKey(val)
+    localStorage.setItem('sm_pexels_key', val)
+    if (user?.id && val.trim()) {
+      apiKeysApi.create({ service: 'pexels', label: 'Pexels API Key', raw_key: val.trim() }).catch(() => {})
+    }
+  }
 
   // ── Image Generator state ─────────────────────────────────────
   const [imgPrompt,        setImgPrompt]        = useState('')
@@ -563,29 +598,73 @@ ${productionNotes}`
 
     try {
       setP(15,'🤖 Groq AI writing your script...')
-      const gr = await fetch('https://api.groq.com/openai/v1/chat/completions',{
-        method:'POST',
-        headers:{'Content-Type':'application/json',Authorization:'Bearer '+groqKey},
-        body:JSON.stringify({
-          model:'llama-3.3-70b-versatile', max_tokens:1500, temperature:0.7,
-          messages:[{role:'user',content:promptText+`\n\nRespond ONLY with valid JSON, no markdown:
-{"title":"Ad title","fullScript":"Complete voiceover paragraph","scenes":[{"sceneNumber":1,"overlayText":"Max 6 word headline","voiceover":"1-2 sentence narration","pexelsQuery":"2-3 word video search","tags":["tag"]}]}`}]
+      const activeGroqKey = (groqKey || localStorage.getItem('sm_groq_key') || localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY || '').trim()
+      const activePexelsKey = (pexelsKey || localStorage.getItem('sm_pexels_key') || localStorage.getItem('pexels_api_key') || import.meta.env.VITE_PEXELS_API_KEY || '').trim()
+
+      let gr = null
+      if (activeGroqKey) {
+        try {
+          const directRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + activeGroqKey },
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile', max_tokens: 1500, temperature: 0.7,
+              messages: [{
+                role: 'user', content: promptText + `\n\nRespond ONLY with valid JSON, no markdown:
+{"title":"Ad title","fullScript":"Complete voiceover paragraph","scenes":[{"sceneNumber":1,"overlayText":"Max 6 word headline","voiceover":"1-2 sentence narration","pexelsQuery":"2-3 word video search","tags":["tag"]}]}`
+              }]
+            })
+          })
+          if (directRes.ok) gr = directRes
+        } catch (e) {
+          console.warn('Direct Groq fetch failed, attempting backend proxy...', e)
+        }
+      }
+
+      if (!gr) {
+        // Fall back to backend proxy
+        const payload = {
+          model: 'llama-3.3-70b-versatile', max_tokens: 1500, temperature: 0.7,
+          messages: [{
+            role: 'user', content: promptText + `\n\nRespond ONLY with valid JSON, no markdown:
+{"title":"Ad title","fullScript":"Complete voiceover paragraph","scenes":[{"sceneNumber":1,"overlayText":"Max 6 word headline","voiceover":"1-2 sentence narration","pexelsQuery":"2-3 word video search","tags":["tag"]}]}`
+          }]
+        }
+        const token = localStorage.getItem('access_token')
+        const proxyRes = await fetch(`${BACKEND_URL}/videos/groq-proxy/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: 'Bearer ' + token } : {})
+          },
+          body: JSON.stringify({ payload, groq_key: activeGroqKey })
         })
-      })
-      if (!gr.ok){ const e=await gr.json(); throw new Error('Groq: '+(e.error?.message||gr.status)) }
-      const gd=await gr.json()
+
+        if (proxyRes.ok) {
+          gr = proxyRes
+        } else {
+          const pe = await proxyRes.json().catch(() => ({}))
+          const msg = pe.error || pe.detail || 'Invalid or missing API key. Please set your Groq API key in Settings or above.'
+          throw new Error('Groq: ' + msg)
+        }
+      }
+
+      const gd = await gr.json()
       const adData = parseAiVideoResponse(gd.choices?.[0]?.message?.content)
 
       setP(45,'🎬 Fetching Pexels stock videos...')
-      const sv=await Promise.all(adData.scenes.map(async sc=>{
+      const sv = await Promise.all(adData.scenes.map(async sc => {
         try {
-          const r=await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(sc.pexelsQuery)}&per_page=5&size=medium`,{headers:{Authorization:pexelsKey}})
+          if (!activePexelsKey) return { ...sc, videoUrl: null }
+          const r = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(sc.pexelsQuery)}&per_page=5&size=medium`, {
+            headers: { Authorization: activePexelsKey }
+          })
           if (!r.ok) throw new Error()
-          const d=await r.json()
-          const v=d.videos?.[0]
-          const vf=v?.video_files?.find(f=>f.quality==='hd')||v?.video_files?.find(f=>f.quality==='sd')||v?.video_files?.[0]
-          return {...sc,videoUrl:vf?.link||null}
-        } catch { return {...sc,videoUrl:null} }
+          const d = await r.json()
+          const v = d.videos?.[0]
+          const vf = v?.video_files?.find(f => f.quality === 'hd') || v?.video_files?.find(f => f.quality === 'sd') || v?.video_files?.[0]
+          return { ...sc, videoUrl: vf?.link || null }
+        } catch { return { ...sc, videoUrl: null } }
       }))
 
       setP(85,'🎞️ Building player...')
@@ -601,25 +680,59 @@ ${productionNotes}`
   // ── Image Generator ───────────────────────────────────────────
   async function generateImage() {
     setImgError('')
-    if (!groqKey)    { setImgError('⚠️ Enter your Groq API key above.'); return }
-    if (!pexelsKey)  { setImgError('⚠️ Enter your Pexels API key above.'); return }
-    if (!imgPrompt)  { setImgError('⚠️ Describe the image you want.'); return }
+    const activeGroqKey = (groqKey || localStorage.getItem('sm_groq_key') || localStorage.getItem('groq_api_key') || import.meta.env.VITE_GROQ_API_KEY || '').trim()
+    const activePexelsKey = (pexelsKey || localStorage.getItem('sm_pexels_key') || localStorage.getItem('pexels_api_key') || import.meta.env.VITE_PEXELS_API_KEY || '').trim()
+
+    if (!imgPrompt) { setImgError('⚠️ Describe the image you want.'); return }
     setImgGenerating(true); setImgProgress(0); setImgResultUrl('')
     const setIP = (pct, lbl) => { setImgProgress(pct); setImgProgressLabel(lbl) }
     try {
       setIP(15, '🤖 Building search query...')
-      const gr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method:'POST',
-        headers:{'Content-Type':'application/json', Authorization:'Bearer '+groqKey},
-        body: JSON.stringify({
-          model:'llama-3.3-70b-versatile', max_tokens:80, temperature:0.85,
-          messages:[
-            {role:'system', content:'Output ONLY a 3-5 word Pexels image search query. No punctuation, no explanation. Be creative and specific.'},
-            {role:'user', content:`Style: ${imgStyle}. Tone: ${imgTone}. Orientation: ${imgOrientation}. Description: ${imgPrompt}\nBest Pexels search query:`}
+      let gr = null
+      if (activeGroqKey) {
+        try {
+          const directRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + activeGroqKey },
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile', max_tokens: 80, temperature: 0.85,
+              messages: [
+                { role: 'system', content: 'Output ONLY a 3-5 word Pexels image search query. No punctuation, no explanation. Be creative and specific.' },
+                { role: 'user', content: `Style: ${imgStyle}. Tone: ${imgTone}. Orientation: ${imgOrientation}. Description: ${imgPrompt}\nBest Pexels search query:` }
+              ]
+            })
+          })
+          if (directRes.ok) gr = directRes
+        } catch (e) {
+          console.warn('Direct Groq image fetch failed, trying proxy...', e)
+        }
+      }
+
+      if (!gr) {
+        const payload = {
+          model: 'llama-3.3-70b-versatile', max_tokens: 80, temperature: 0.85,
+          messages: [
+            { role: 'system', content: 'Output ONLY a 3-5 word Pexels image search query. No punctuation, no explanation. Be creative and specific.' },
+            { role: 'user', content: `Style: ${imgStyle}. Tone: ${imgTone}. Orientation: ${imgOrientation}. Description: ${imgPrompt}\nBest Pexels search query:` }
           ]
+        }
+        const token = localStorage.getItem('access_token')
+        const proxyRes = await fetch(`${BACKEND_URL}/videos/groq-proxy/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: 'Bearer ' + token } : {})
+          },
+          body: JSON.stringify({ payload, groq_key: activeGroqKey })
         })
-      })
-      if (!gr.ok) { const e=await gr.json().catch(()=>({})); throw new Error('Groq: '+(e.error?.message||gr.status)) }
+        if (proxyRes.ok) {
+          gr = proxyRes
+        } else {
+          const pe = await proxyRes.json().catch(() => ({}))
+          throw new Error('Groq: ' + (pe.error || pe.detail || 'Invalid or missing API key'))
+        }
+      }
+
       const gd = await gr.json()
       const query = (gd.choices?.[0]?.message?.content||'professional product photo').trim().replace(/[^a-zA-Z0-9 ]/g,'').trim()
       const randomPage = Math.floor(Math.random()*5)+1
@@ -628,7 +741,7 @@ ${productionNotes}`
       setIP(55, `🔍 Searching for "${query}"...`)
       const px = await fetch(
         `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${randomPage}&orientation=${imgOrientation}`,
-        {headers:{Authorization:pexelsKey}}
+        { headers: { Authorization: activePexelsKey } }
       )
       if (!px.ok) throw new Error('Pexels error: '+px.status)
       const pd = await px.json()
@@ -645,6 +758,7 @@ ${productionNotes}`
     }
     setImgGenerating(false)
   }
+
 
   async function downloadGeneratedImage() {
     if (!imgResultUrl) return
@@ -888,10 +1002,67 @@ ${productionNotes}`
         </div>
       </div>
 
+      {/* API Key Configuration Bar */}
+      <div className="glass-card p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-white/[0.02]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+            {groqKey ? <ShieldCheck className="w-4 h-4 text-emerald-400" /> : <AlertTriangle className="w-4 h-4 text-amber-400" />}
+          </div>
+          <div>
+            <div className="text-sm font-medium text-white flex items-center gap-2">
+              <span>Groq API Key</span>
+              {groqKey ? (
+                <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                  ✓ Configured
+                </span>
+              ) : (
+                <span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  ⚠️ Server Proxy Active
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-white/40">Used for AI script writing & image prompt synthesis</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowKeyConfig(v => !v)}
+          className="text-xs text-brand-400 hover:text-brand-300 font-medium transition-colors"
+        >
+          {showKeyConfig ? 'Hide Key Config' : '⚙️ Configure API Key'}
+        </button>
+      </div>
 
-  
+      {showKeyConfig && (
+        <div className="glass-card p-4 space-y-3 bg-white/[0.03]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="label text-xs">Groq API Key (Free at <a href="https://console.groq.com" target="_blank" rel="noreferrer" className="text-brand-400 underline">console.groq.com</a>)</label>
+              <input
+                type="password"
+                className="input w-full font-mono text-xs"
+                placeholder="gsk_..."
+                value={groqKey}
+                onChange={e => updateGroqKeyVal(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label text-xs">Pexels API Key (Free at <a href="https://www.pexels.com/api" target="_blank" rel="noreferrer" className="text-brand-400 underline">pexels.com/api</a>)</label>
+              <input
+                type="password"
+                className="input w-full font-mono text-xs"
+                placeholder="your-pexels-key"
+                value={pexelsKey}
+                onChange={e => updatePexelsKeyVal(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Ad Details */}
       <div className="glass-card p-5">
+
         <div className="text-xs font-semibold text-brand-400 uppercase tracking-wider mb-3">📋 Ad Details</div>
         <div className="flex items-center gap-3 mb-4 cursor-pointer select-none" onClick={()=>setUsePrompt(p=>!p)}>
           <div className={`w-10 h-5 rounded-full relative transition-colors ${usePrompt?'bg-brand-600':'bg-white/20'}`}>

@@ -5,12 +5,13 @@ import {
   Key, Plus, Trash2, Check, X, ExternalLink, Shield, Pencil,
   Instagram, Linkedin, Facebook, Loader2, Eye, EyeOff,
   BadgeCheck, BarChart3, CreditCard, Sparkles, UserRound, Globe2, Mail, ArrowRight,
-  BookOpen
+  BookOpen, Globe, MapPin
 } from 'lucide-react'
 import { apiKeysApi, socialAccountsApi, authApi, videosApi, billingApi } from '@/api/client'
 import { useAuthStore } from '@/store/auth'
 import { Modal, Input, ProgressBar } from '@/components/ui'
 import PricingSection from '@/components/PricingSection'
+import { COUNTRIES, detectUserCountry, formatCurrencyAmount, calculatePriceDetails } from '@/config/pricingPlans'
 import { getLocalVideosKey } from '@/utils/accountStorage'
 import { getAccessLevel, cancelSubscription, saveSubscription } from '@/utils/trialAccess.js'
 import { monthlyVideoQuota } from '@/utils/subscription'
@@ -161,8 +162,8 @@ const PLAN_BENEFITS = {
 
 const PRO_PLAN_BASE = {
   label: 'Pro Plan',
-  monthly: 20,
-  annual: 16,
+  monthly: 10,
+  annual: 8,
   period: '/month',
   quota: '50 videos / month',
   note: '1 SocialMind account · AI-powered',
@@ -171,8 +172,8 @@ const PRO_PLAN_BASE = {
 
 const ENT_PLAN_BASE = {
   label: 'Enterprise Plan',
-  monthly: 79,
-  annual: 63,
+  monthly: 39.5,
+  annual: 31.5,
   period: '/month',
   quota: 'Unlimited videos',
   note: 'Up to 5 team members · SSO included',
