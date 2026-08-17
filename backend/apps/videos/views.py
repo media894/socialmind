@@ -46,6 +46,10 @@ def _get_groq_key_for_request(request):
 @permission_classes([AllowAny])
 def groq_proxy(request):
     payload = request.data.get('payload', {})
+    if isinstance(payload, dict):
+        model_name = payload.get('model', '')
+        if not model_name or 'llama-3.3' in model_name or '70b-versatile' in model_name:
+            payload['model'] = 'llama-3.1-8b-instant'
     groq_key = _get_groq_key_for_request(request)
     if not groq_key:
         return Response({'error': 'GROQ_API_KEY not configured on server or in request'}, status=400)
