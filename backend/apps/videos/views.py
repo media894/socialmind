@@ -46,21 +46,39 @@ def _get_groq_key_for_request(request):
 @permission_classes([AllowAny])
 def groq_proxy(request):
     payload = request.data.get('payload', {})
-    if isinstance(payload, dict):
-        model_name = payload.get('model', '')
-        if not model_name or 'llama-3.3' in model_name or '70b-versatile' in model_name:
-            payload['model'] = 'llama-3.1-8b-instant'
+    if not isinstance(payload, dict):
+        payload = {}
     groq_key = _get_groq_key_for_request(request)
     if not groq_key:
         return Response({'error': 'GROQ_API_KEY not configured on server or in request'}, status=400)
-    try:
-        with httpx.Client(timeout=30) as client:
-            resp = client.post('https://api.groq.com/openai/v1/chat/completions',
-                headers={'Authorization': f'Bearer {groq_key}', 'Content-Type': 'application/json'},
-                json=payload)
-        return Response(resp.json(), status=resp.status_code)
-    except httpx.RequestError as e:
-        return Response({'error': str(e)}, status=502)
+    
+    requested_model = str(payload.get('model', '')).strip()
+    models_to_try = [requested_model, 'llama-3.1-8b-instant', 'llama-3.3-70b-specdec', 'mixtral-8x7b-32768', 'llama3-70b-8192', 'llama3-8b-8192']
+    seen = set()
+    last_resp = None
+
+    for m in models_to_try:
+        if not m or m in seen or 'versatile' in m:
+            continue
+        seen.add(m)
+        payload['model'] = m
+        try:
+            with httpx.Client(timeout=30) as client:
+                resp = client.post('https://api.groq.com/openai/v1/chat/completions',
+                    headers={'Authorization': f'Bearer {groq_key}', 'Content-Type': 'application/json'},
+                    json=payload)
+            if resp.status_code == 200:
+                return Response(resp.json(), status=200)
+            last_resp = resp
+        except httpx.RequestError as e:
+            pass
+
+    if last_resp is not None:
+        try:
+            return Response(last_resp.json(), status=last_resp.status_code)
+        except Exception:
+            return Response({'error': last_resp.text}, status=last_resp.status_code)
+    return Response({'error': 'Failed to reach Groq API'}, status=502)
 
 
 @api_view(['POST'])

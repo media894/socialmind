@@ -614,21 +614,24 @@ ${productionNotes}`
 
       let gr = null
       if (activeGroqKey) {
-        try {
-          const directRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + activeGroqKey },
-            body: JSON.stringify({
-              model: 'llama-3.1-8b-instant', max_tokens: 1500, temperature: 0.7,
-              messages: [{
-                role: 'user', content: promptText + `\n\nRespond ONLY with valid JSON, no markdown:
+        const candidateModels = ['llama-3.1-8b-instant', 'llama-3.3-70b-specdec', 'mixtral-8x7b-32768', 'llama3-70b-8192']
+        for (const modelCandidate of candidateModels) {
+          try {
+            const directRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + activeGroqKey },
+              body: JSON.stringify({
+                model: modelCandidate, max_tokens: 1500, temperature: 0.7,
+                messages: [{
+                  role: 'user', content: promptText + `\n\nRespond ONLY with valid JSON, no markdown:
 {"title":"Ad title","fullScript":"Complete voiceover paragraph","scenes":[{"sceneNumber":1,"overlayText":"Max 6 word headline","voiceover":"1-2 sentence narration","pexelsQuery":"2-3 word video search","tags":["tag"]}]}`
-              }]
+                }]
+              })
             })
-          })
-          if (directRes.ok) gr = directRes
-        } catch (e) {
-          console.warn('Direct Groq fetch failed, attempting backend proxy...', e)
+            if (directRes.ok) { gr = directRes; break }
+          } catch (e) {
+            console.warn(`Direct Groq fetch (${modelCandidate}) failed:`, e)
+          }
         }
       }
 
