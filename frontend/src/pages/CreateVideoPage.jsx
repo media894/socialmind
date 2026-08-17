@@ -619,7 +619,7 @@ ${productionNotes}`
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + activeGroqKey },
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile', max_tokens: 1500, temperature: 0.7,
+              model: 'llama-3.1-8b-instant', max_tokens: 1500, temperature: 0.7,
               messages: [{
                 role: 'user', content: promptText + `\n\nRespond ONLY with valid JSON, no markdown:
 {"title":"Ad title","fullScript":"Complete voiceover paragraph","scenes":[{"sceneNumber":1,"overlayText":"Max 6 word headline","voiceover":"1-2 sentence narration","pexelsQuery":"2-3 word video search","tags":["tag"]}]}`
@@ -635,7 +635,7 @@ ${productionNotes}`
       if (!gr) {
         // Fall back to backend proxy
         const payload = {
-          model: 'llama-3.3-70b-versatile', max_tokens: 1500, temperature: 0.7,
+          model: 'llama-3.1-8b-instant', max_tokens: 1500, temperature: 0.7,
           messages: [{
             role: 'user', content: promptText + `\n\nRespond ONLY with valid JSON, no markdown:
 {"title":"Ad title","fullScript":"Complete voiceover paragraph","scenes":[{"sceneNumber":1,"overlayText":"Max 6 word headline","voiceover":"1-2 sentence narration","pexelsQuery":"2-3 word video search","tags":["tag"]}]}`
@@ -707,7 +707,7 @@ ${productionNotes}`
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + activeGroqKey },
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile', max_tokens: 80, temperature: 0.85,
+              model: 'llama-3.1-8b-instant', max_tokens: 80, temperature: 0.85,
               messages: [
                 { role: 'system', content: 'Output ONLY a 3-5 word Pexels image search query. No punctuation, no explanation. Be creative and specific.' },
                 { role: 'user', content: `Style: ${imgStyle}. Tone: ${imgTone}. Orientation: ${imgOrientation}. Description: ${imgPrompt}\nBest Pexels search query:` }
@@ -722,7 +722,7 @@ ${productionNotes}`
 
       if (!gr) {
         const payload = {
-          model: 'llama-3.3-70b-versatile', max_tokens: 80, temperature: 0.85,
+          model: 'llama-3.1-8b-instant', max_tokens: 80, temperature: 0.85,
           messages: [
             { role: 'system', content: 'Output ONLY a 3-5 word Pexels image search query. No punctuation, no explanation. Be creative and specific.' },
             { role: 'user', content: `Style: ${imgStyle}. Tone: ${imgTone}. Orientation: ${imgOrientation}. Description: ${imgPrompt}\nBest Pexels search query:` }
