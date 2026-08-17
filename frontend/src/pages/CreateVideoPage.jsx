@@ -5,7 +5,7 @@ import {
   Loader2, Maximize2, Minimize2, AlertTriangle, ShieldCheck, Send, Save, RefreshCw, Play
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi, apiKeysApi } from '@/api/client'
+import { authApi, apiKeysApi, BACKEND_URL } from '@/api/client'
 import { appendScheduleEntry } from '@/utils/localVideoSchedules'
 import { buildSocialPostKit } from '@/utils/socialPostKit'
 import { useAuthStore } from '@/store/auth'
