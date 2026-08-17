@@ -645,7 +645,7 @@ ${productionNotes}`
           gr = proxyRes
         } else {
           const pe = await proxyRes.json().catch(() => ({}))
-          const msg = pe.error || pe.detail || 'Invalid or missing API key. Please set your Groq API key in Settings or above.'
+          const msg = (typeof pe.error === 'string' ? pe.error : pe.detail) || (typeof pe.error === 'object' ? JSON.stringify(pe.error) : null) || 'API key issue. Please check Groq key.'
           throw new Error('Groq: ' + msg)
         }
       }

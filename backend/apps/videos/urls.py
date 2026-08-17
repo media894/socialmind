@@ -7,8 +7,9 @@ router.register('projects', VideoProjectViewSet, basename='video-projects')
 router.register('templates', VideoTemplateViewSet, basename='video-templates')
 
 urlpatterns = [
-    path('', include(router.urls)),
     path('groq-proxy/', groq_proxy, name='groq-proxy'),
     path('groq-tts-proxy/', groq_tts_proxy, name='groq-tts-proxy'),
     path('public/<uuid:pk>/', PublicVideoView.as_view({'get': 'retrieve'}), name='public-video'),
+    path('', include(router.urls)),
 ]
+
