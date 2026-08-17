@@ -1147,7 +1147,8 @@ function VideoMode({ video, filename, autoGenerate = false, onAutoGenerateHandle
         for (const chunk of chunks) {
           let decodedChunk = null
           try {
-            const res = await fetch(`${BACKEND_URL}/videos/groq-tts-proxy/`, {
+            const ttsEndpoint = typeof BACKEND_URL !== 'undefined' && BACKEND_URL ? BACKEND_URL : '/api/v1'
+            const res = await fetch(`${ttsEndpoint}/videos/groq-tts-proxy/`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ input: chunk, groq_key: groqKey || '' }),
