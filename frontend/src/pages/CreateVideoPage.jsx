@@ -1002,63 +1002,6 @@ ${productionNotes}`
         </div>
       </div>
 
-      {/* API Key Configuration Bar */}
-      <div className="glass-card p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-white/[0.02]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-            {groqKey ? <ShieldCheck className="w-4 h-4 text-emerald-400" /> : <AlertTriangle className="w-4 h-4 text-amber-400" />}
-          </div>
-          <div>
-            <div className="text-sm font-medium text-white flex items-center gap-2">
-              <span>Groq API Key</span>
-              {groqKey ? (
-                <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
-                  ✓ Configured
-                </span>
-              ) : (
-                <span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  ⚠️ Server Proxy Active
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-white/40">Used for AI script writing & image prompt synthesis</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowKeyConfig(v => !v)}
-          className="text-xs text-brand-400 hover:text-brand-300 font-medium transition-colors"
-        >
-          {showKeyConfig ? 'Hide Key Config' : '⚙️ Configure API Key'}
-        </button>
-      </div>
-
-      {showKeyConfig && (
-        <div className="glass-card p-4 space-y-3 bg-white/[0.03]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="label text-xs">Groq API Key (Free at <a href="https://console.groq.com" target="_blank" rel="noreferrer" className="text-brand-400 underline">console.groq.com</a>)</label>
-              <input
-                type="password"
-                className="input w-full font-mono text-xs"
-                placeholder="gsk_..."
-                value={groqKey}
-                onChange={e => updateGroqKeyVal(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label text-xs">Pexels API Key (Free at <a href="https://www.pexels.com/api" target="_blank" rel="noreferrer" className="text-brand-400 underline">pexels.com/api</a>)</label>
-              <input
-                type="password"
-                className="input w-full font-mono text-xs"
-                placeholder="your-pexels-key"
-                value={pexelsKey}
-                onChange={e => updatePexelsKeyVal(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Ad Details */}
       <div className="glass-card p-5">
