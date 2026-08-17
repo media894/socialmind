@@ -630,6 +630,7 @@ ${productionNotes}`
 {"title":"Ad title","fullScript":"Complete voiceover paragraph","scenes":[{"sceneNumber":1,"overlayText":"Max 6 word headline","voiceover":"1-2 sentence narration","pexelsQuery":"2-3 word video search","tags":["tag"]}]}`
           }]
         }
+        const token = localStorage.getItem('access_token')
         const apiEndpoint = typeof BACKEND_URL !== 'undefined' && BACKEND_URL ? BACKEND_URL : '/api/v1'
         const proxyRes = await fetch(`${apiEndpoint}/videos/groq-proxy/`, {
           method: 'POST',
@@ -716,6 +717,7 @@ ${productionNotes}`
             { role: 'user', content: `Style: ${imgStyle}. Tone: ${imgTone}. Orientation: ${imgOrientation}. Description: ${imgPrompt}\nBest Pexels search query:` }
           ]
         }
+        const token = localStorage.getItem('access_token')
         const apiEndpoint = typeof BACKEND_URL !== 'undefined' && BACKEND_URL ? BACKEND_URL : '/api/v1'
         const proxyRes = await fetch(`${apiEndpoint}/videos/groq-proxy/`, {
           method: 'POST',
