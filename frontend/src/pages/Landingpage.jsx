@@ -129,22 +129,6 @@ export default function LandingPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (videoRef.current) {
-                    videoRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                    videoRef.current.play()
-                    setIsPlaying(true)
-                  } else {
-                    setVideoModalOpen(true)
-                  }
-                }}
-                className="btn-ghost inline-flex items-center gap-2 px-7 py-3 text-base text-brand-300 border border-brand-500/30 bg-brand-500/10 hover:bg-brand-500/20"
-              >
-                <Play className="w-5 h-5 text-brand-400 fill-brand-400" />
-                Watch Video Demo
-              </button>
-              <button
-                type="button"
                 onClick={() => { setAuthMode('login'); setAuthOpen(true) }}
                 className="btn-ghost inline-flex items-center gap-2 px-7 py-3 text-base"
               >

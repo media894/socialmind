@@ -242,21 +242,6 @@ export default function LoginPage() {
               Start your free demo
             </button>
             <button
-              onClick={() => {
-                if (videoRef.current) {
-                  videoRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                  videoRef.current.play()
-                  setIsPlaying(true)
-                } else {
-                  setVideoModalOpen(true)
-                }
-              }}
-              className="px-8 py-4 rounded-xl border border-brand-500/40 bg-brand-600/20 hover:bg-brand-600/35 text-white font-semibold text-base transition-all duration-200 flex items-center gap-2.5 shadow-lg shadow-brand-500/20 active:scale-95"
-            >
-              <Play className="w-5 h-5 text-brand-400 fill-brand-400" />
-              Watch Video Demo
-            </button>
-            <button
               onClick={openLogin}
               className="px-8 py-4 rounded-xl border border-white/15 hover:border-white/35 text-white/65 hover:text-white font-semibold text-base transition-all duration-200 hover:bg-white/[0.04]"
             >
