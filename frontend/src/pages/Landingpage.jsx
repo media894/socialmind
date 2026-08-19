@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   ShieldCheck,
@@ -12,6 +12,10 @@ import {
   Video,
   Globe,
   TrendingUp,
+  Play,
+  Sparkles,
+  Maximize2,
+  X,
 } from 'lucide-react'
 
 import EmailOtpAuth from '@/components/auth/EmailOtpAuth'
@@ -49,6 +53,9 @@ export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState('login')
   const [plansOpen, setPlansOpen] = useState(false)
+  const [videoModalOpen, setVideoModalOpen] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const videoRef = useRef(null)
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -122,11 +129,95 @@ export default function LandingPage() {
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  if (videoRef.current) {
+                    videoRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    videoRef.current.play()
+                    setIsPlaying(true)
+                  } else {
+                    setVideoModalOpen(true)
+                  }
+                }}
+                className="btn-ghost inline-flex items-center gap-2 px-7 py-3 text-base text-brand-300 border border-brand-500/30 bg-brand-500/10 hover:bg-brand-500/20"
+              >
+                <Play className="w-5 h-5 text-brand-400 fill-brand-400" />
+                Watch Video Demo
+              </button>
+              <button
+                type="button"
                 onClick={() => { setAuthMode('login'); setAuthOpen(true) }}
                 className="btn-ghost inline-flex items-center gap-2 px-7 py-3 text-base"
               >
                 Request a demo
               </button>
+            </div>
+
+            {/* FRONT VIDEO SHOWCASE PLAYER */}
+            <div className="mt-12 relative group max-w-4xl mx-auto text-left">
+              <div className="absolute -inset-2 rounded-[2.5rem] bg-gradient-to-r from-brand-600 via-violet-600 to-indigo-600 opacity-40 blur-2xl group-hover:opacity-75 transition duration-500" />
+              <div className="relative rounded-2xl md:rounded-3xl border border-white/20 bg-[#0d0a26]/95 backdrop-blur-2xl overflow-hidden shadow-[0_25px_70px_rgba(0,0,0,0.8)]">
+                {/* Window Bar */}
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-white/[0.04]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                    <span className="ml-3 text-xs font-bold text-white/80 tracking-wide flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-brand-400" />
+                      SocialMind Platform Overview Demo Video
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                      <span className="w-2 h-2 rounded-full bg-brand-400 animate-ping" />
+                      FEATURED VIDEO
+                    </span>
+                    <button
+                      onClick={() => setVideoModalOpen(true)}
+                      className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition"
+                      title="Fullscreen View"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Video Player */}
+                <div className="relative aspect-video w-full bg-black/90 group/player">
+                  <video
+                    ref={videoRef}
+                    src="/demo-video.mp4"
+                    controls
+                    playsInline
+                    preload="metadata"
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    className="w-full h-full object-cover rounded-b-2xl md:rounded-b-3xl"
+                  />
+
+                  {!isPlaying && (
+                    <div
+                      onClick={() => {
+                        if (videoRef.current) {
+                          videoRef.current.play()
+                          setIsPlaying(true)
+                        }
+                      }}
+                      className="absolute inset-0 flex flex-col items-center justify-center bg-black/45 backdrop-blur-[3px] cursor-pointer transition-all duration-300 group-hover/player:bg-black/25"
+                    >
+                      <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-brand-600/90 hover:bg-brand-500 text-white flex items-center justify-center shadow-[0_0_60px_rgba(99,73,255,0.85)] hover:scale-110 transition-transform duration-300 border-2 border-white/40">
+                        <Play className="w-10 h-10 md:w-12 md:h-12 ml-1.5 text-white fill-white" />
+                      </div>
+                      <p className="mt-4 text-base md:text-lg font-extrabold text-white tracking-wide">
+                        Click to Watch Demo Video
+                      </p>
+                      <p className="mt-1 text-xs text-white/60 font-medium">
+                        See SocialMind AI Video Automation in Action
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
           </div>
@@ -310,6 +401,42 @@ export default function LandingPage() {
           navigate('/dashboard')
         }}
       />
+
+      {/* FULLSCREEN CINEMA VIDEO MODAL */}
+      {videoModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl"
+          onClick={e => e.target === e.currentTarget && setVideoModalOpen(false)}
+        >
+          <div className="relative w-full max-w-5xl rounded-3xl border border-white/20 bg-[#0d0a26] overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.9)]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.04]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-600/50">
+                  <Video className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-wide">SocialMind Platform Overview</h3>
+                  <p className="text-xs text-white/50">AI Social Media Automation Demo Video</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setVideoModalOpen(false)}
+                className="p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="relative aspect-video w-full bg-black">
+              <video
+                src="/demo-video.mp4"
+                controls
+                autoPlay
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
